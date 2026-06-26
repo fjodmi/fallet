@@ -25,19 +25,25 @@ def init_db():
             type TEXT NOT NULL,
             category TEXT NOT NULL,
             amount REAL NOT NULL,
+            payment_method TEXT NOT NULL DEFAULT 'card',
             comment TEXT,
             created_at TEXT NOT NULL
         )
     """)
-    conn.commit()
+    # migrate existing db if needed
+    try:
+        c.execute("ALTER TABLE transactions ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'card'")
+        conn.commit()
+    except:
+        pass
     conn.close()
 
-def add_transaction(type_, category, amount, comment=None):
+def add_transaction(type_, category, amount, payment_method, comment=None):
     conn = sqlite3.connect("budget.db")
     c = conn.cursor()
     c.execute(
-        "INSERT INTO transactions (type, category, amount, comment, created_at) VALUES (?, ?, ?, ?, ?)",
-        (type_, category, amount, comment, datetime.now().isoformat())
+        "INSERT INTO transactions (type, category, amount, payment_method, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (type_, category, amount, payment_method, comment, datetime.now().isoformat())
     )
     conn.commit()
     conn.close()
@@ -111,6 +117,15 @@ def category_keyboard(categories, prefix):
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="back")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+def payment_method_keyboard(prefix):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="💳 Карта", callback_data=f"pm:{prefix}:card"),
+            InlineKeyboardButton(text="💵 Наличные", callback_data=f"pm:{prefix}:cash"),
+        ],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
+    ])
+
 def back_button():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="◀️ В меню", callback_data="back")]
@@ -126,10 +141,7 @@ def skip_comment_keyboard():
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(
-        "👋 Привет! Я твой финансовый трекер.\n\nВыбери действие:",
-        reply_markup=main_menu()
-    )
+    await message.answer("👋 Привет! Я твой финансовый трекер.\n\nВыбери действие:", reply_markup=main_menu())
 
 @dp.message(Command("menu"))
 async def cmd_menu(message: Message, state: FSMContext):
@@ -143,35 +155,39 @@ async def cb_back(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "add_income")
 async def cb_add_income(callback: CallbackQuery):
-    await callback.message.edit_text(
-        "Выбери категорию дохода:",
-        reply_markup=category_keyboard(INCOME_CATEGORIES, "income")
-    )
+    await callback.message.edit_text("Выбери категорию дохода:", reply_markup=category_keyboard(INCOME_CATEGORIES, "income"))
 
 @dp.callback_query(F.data == "add_expense")
 async def cb_add_expense(callback: CallbackQuery):
-    await callback.message.edit_text(
-        "Выбери категорию расхода:",
-        reply_markup=category_keyboard(EXPENSE_CATEGORIES, "expense")
-    )
+    await callback.message.edit_text("Выбери категорию расхода:", reply_markup=category_keyboard(EXPENSE_CATEGORIES, "expense"))
 
 @dp.callback_query(F.data.startswith("income:"))
 async def cb_income_category(callback: CallbackQuery, state: FSMContext):
     category = callback.data.split(":", 1)[1]
     await state.update_data(type="income", category=category)
-    await state.set_state(AddTransaction.waiting_amount)
     await callback.message.edit_text(
-        f"Категория: {category}\n\nВведи сумму в €:",
-        reply_markup=back_button()
+        f"Категория: {category}\n\nКак получил деньги?",
+        reply_markup=payment_method_keyboard(f"income|{category}")
     )
 
 @dp.callback_query(F.data.startswith("expense:"))
 async def cb_expense_category(callback: CallbackQuery, state: FSMContext):
     category = callback.data.split(":", 1)[1]
     await state.update_data(type="expense", category=category)
-    await state.set_state(AddTransaction.waiting_amount)
     await callback.message.edit_text(
-        f"Категория: {category}\n\nВведи сумму в €:",
+        f"Категория: {category}\n\nКак платил?",
+        reply_markup=payment_method_keyboard(f"expense|{category}")
+    )
+
+@dp.callback_query(F.data.startswith("pm:"))
+async def cb_payment_method(callback: CallbackQuery, state: FSMContext):
+    _, prefix, method = callback.data.split(":", 2)
+    type_, category = prefix.split("|", 1)
+    await state.update_data(type=type_, category=category, payment_method=method)
+    await state.set_state(AddTransaction.waiting_amount)
+    method_text = "💳 Карта" if method == "card" else "💵 Наличные"
+    await callback.message.edit_text(
+        f"Категория: {category}\nСпособ: {method_text}\n\nВведи сумму в €:",
         reply_markup=back_button()
     )
 
@@ -187,10 +203,7 @@ async def process_amount(message: Message, state: FSMContext):
 
     await state.update_data(amount=amount)
     await state.set_state(AddTransaction.waiting_comment)
-    await message.answer(
-        "Добавь комментарий (например, фамилию) или пропусти:",
-        reply_markup=skip_comment_keyboard()
-    )
+    await message.answer("Добавь комментарий (например, фамилию) или пропусти:", reply_markup=skip_comment_keyboard())
 
 @dp.message(AddTransaction.waiting_comment)
 async def process_comment(message: Message, state: FSMContext):
@@ -205,13 +218,15 @@ async def save_transaction(message, state, comment, from_callback=False):
     type_ = data["type"]
     category = data["category"]
     amount = data["amount"]
+    payment_method = data.get("payment_method", "card")
 
-    add_transaction(type_, category, amount, comment)
+    add_transaction(type_, category, amount, payment_method, comment)
     await state.clear()
 
     sign = "+" if type_ == "income" else "-"
+    method_emoji = "💳" if payment_method == "card" else "💵"
     comment_text = f" — {comment}" if comment else ""
-    text = f"✅ Сохранено!\n\n{sign}{amount:.2f} € | {category}{comment_text}\n\nГлавное меню:"
+    text = f"✅ Сохранено!\n\n{sign}{amount:.2f} € | {category} | {method_emoji}{comment_text}\n\nГлавное меню:"
 
     if from_callback:
         await message.edit_text(text, reply_markup=main_menu())
@@ -221,18 +236,32 @@ async def save_transaction(message, state, comment, from_callback=False):
 @dp.callback_query(F.data == "balance")
 async def cb_balance(callback: CallbackQuery):
     rows = get_month_transactions()
-    income = sum(r[3] for r in rows if r[1] == "income")
-    expense = sum(r[3] for r in rows if r[1] == "expense")
-    balance = income - expense
+
+    income_card = sum(r[3] for r in rows if r[1] == "income" and r[4] == "card")
+    income_cash = sum(r[3] for r in rows if r[1] == "income" and r[4] == "cash")
+    expense_card = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "card")
+    expense_cash = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "cash")
+
+    total_income = income_card + income_cash
+    total_expense = expense_card + expense_cash
+    balance = total_income - total_expense
+    balance_card = income_card - expense_card
+    balance_cash = income_cash - expense_cash
 
     now = datetime.now()
     month_name = now.strftime("%B %Y")
 
     text = (
         f"📊 <b>Баланс за {month_name}</b>\n\n"
-        f"💰 Доходы:   +{income:.2f} €\n"
-        f"💸 Расходы:  -{expense:.2f} €\n"
-        f"{'➕' if balance >= 0 else '➖'} Остаток:   {'+' if balance >= 0 else ''}{balance:.2f} €"
+        f"💰 Доходы: +{total_income:.2f} €\n"
+        f"   💳 Карта:     +{income_card:.2f} €\n"
+        f"   💵 Наличные:  +{income_cash:.2f} €\n\n"
+        f"💸 Расходы: -{total_expense:.2f} €\n"
+        f"   💳 Карта:     -{expense_card:.2f} €\n"
+        f"   💵 Наличные:  -{expense_cash:.2f} €\n\n"
+        f"{'➕' if balance >= 0 else '➖'} <b>Остаток: {'+' if balance >= 0 else ''}{balance:.2f} €</b>\n"
+        f"   💳 Карта:     {'+' if balance_card >= 0 else ''}{balance_card:.2f} €\n"
+        f"   💵 Наличные:  {'+' if balance_cash >= 0 else ''}{balance_cash:.2f} €"
     )
     await callback.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
 
@@ -245,11 +274,12 @@ async def cb_history(callback: CallbackQuery):
 
     lines = []
     for r in rows[:30]:
-        id_, type_, cat, amount, comment, created_at = r
+        id_, type_, cat, amount, payment_method, comment, created_at = r
         date = datetime.fromisoformat(created_at).strftime("%d.%m")
         sign = "➕" if type_ == "income" else "➖"
+        method_emoji = "💳" if payment_method == "card" else "💵"
         comment_text = f" — {comment}" if comment else ""
-        lines.append(f"{sign} {date}  {amount:.2f} €  {cat}{comment_text}")
+        lines.append(f"{sign} {date}  {amount:.2f} €  {method_emoji} {cat}{comment_text}")
 
     text = "📋 <b>История за этот месяц:</b>\n\n" + "\n".join(lines)
     if len(rows) > 30:
@@ -269,12 +299,10 @@ async def cb_breakdown(callback: CallbackQuery):
     total_expense = sum(r[3] for r in expense_rows)
     total_income = sum(r[3] for r in income_rows)
 
-    # Group expenses
     exp_by_cat = {}
     for r in expense_rows:
         exp_by_cat[r[2]] = exp_by_cat.get(r[2], 0) + r[3]
 
-    # Group income
     inc_by_cat = {}
     for r in income_rows:
         inc_by_cat[r[2]] = inc_by_cat.get(r[2], 0) + r[3]
