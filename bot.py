@@ -17,7 +17,7 @@ dp = Dispatcher(storage=MemoryStorage())
 
 # --- DB ---
 def init_db():
-    conn = sqlite3.connect("budget.db")
+    conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
@@ -39,7 +39,7 @@ def init_db():
     conn.close()
 
 def add_transaction(type_, category, amount, payment_method, comment=None):
-    conn = sqlite3.connect("budget.db")
+    conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
     c.execute(
         "INSERT INTO transactions (type, category, amount, payment_method, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -53,7 +53,7 @@ def get_month_transactions(year=None, month=None):
     year = year or now.year
     month = month or now.month
     prefix = f"{year}-{month:02d}"
-    conn = sqlite3.connect("budget.db")
+    conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
     c.execute(
         "SELECT * FROM transactions WHERE created_at LIKE ? ORDER BY created_at DESC",
@@ -64,7 +64,7 @@ def get_month_transactions(year=None, month=None):
     return rows
 
 def delete_last_transaction():
-    conn = sqlite3.connect("budget.db")
+    conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
     c.execute("SELECT id FROM transactions ORDER BY id DESC LIMIT 1")
     row = c.fetchone()
