@@ -1,0 +1,364 @@
+import logging
+import sqlite3
+from datetime import datetime
+from aiogram import Bot, Dispatcher, F
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import CommandStart, Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+import os
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(storage=MemoryStorage())
+
+# --- DB ---
+def init_db():
+    conn = sqlite3.connect("budget.db")
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            category TEXT NOT NULL,
+            amount REAL NOT NULL,
+            comment TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def add_transaction(type_, category, amount, comment=None):
+    conn = sqlite3.connect("budget.db")
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO transactions (type, category, amount, comment, created_at) VALUES (?, ?, ?, ?, ?)",
+        (type_, category, amount, comment, datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+def get_month_transactions(year=None, month=None):
+    now = datetime.now()
+    year = year or now.year
+    month = month or now.month
+    prefix = f"{year}-{month:02d}"
+    conn = sqlite3.connect("budget.db")
+    c = conn.cursor()
+    c.execute(
+        "SELECT * FROM transactions WHERE created_at LIKE ? ORDER BY created_at DESC",
+        (f"{prefix}%",)
+    )
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+def delete_last_transaction():
+    conn = sqlite3.connect("budget.db")
+    c = conn.cursor()
+    c.execute("SELECT id FROM transactions ORDER BY id DESC LIMIT 1")
+    row = c.fetchone()
+    if row:
+        c.execute("DELETE FROM transactions WHERE id = ?", (row[0],))
+        conn.commit()
+        conn.close()
+        return True
+    conn.close()
+    return False
+
+# --- States ---
+class AddTransaction(StatesGroup):
+    waiting_amount = State()
+    waiting_comment = State()
+
+# --- Keyboards ---
+INCOME_CATEGORIES = ["💼 Работа", "🏸 Бадминтон", "📦 Прочее"]
+EXPENSE_CATEGORIES = ["🔒 Фиксированные", "👨‍👩‍👧 Семья", "🚗 Транспорт", "🎯 Личное", "📦 Прочее"]
+
+def main_menu():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="➕ Доход", callback_data="add_income"),
+            InlineKeyboardButton(text="➖ Расход", callback_data="add_expense"),
+        ],
+        [
+            InlineKeyboardButton(text="📊 Баланс", callback_data="balance"),
+            InlineKeyboardButton(text="📋 История", callback_data="history"),
+        ],
+        [
+            InlineKeyboardButton(text="📈 Разбивка", callback_data="breakdown"),
+            InlineKeyboardButton(text="🔄 Сравнение", callback_data="compare"),
+        ],
+        [
+            InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last"),
+        ]
+    ])
+
+def category_keyboard(categories, prefix):
+    buttons = []
+    row = []
+    for i, cat in enumerate(categories):
+        row.append(InlineKeyboardButton(text=cat, callback_data=f"{prefix}:{cat}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="back")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def back_button():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="◀️ В меню", callback_data="back")]
+    ])
+
+def skip_comment_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустить", callback_data="skip_comment")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
+    ])
+
+# --- Handlers ---
+@dp.message(CommandStart())
+async def cmd_start(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "👋 Привет! Я твой финансовый трекер.\n\nВыбери действие:",
+        reply_markup=main_menu()
+    )
+
+@dp.message(Command("menu"))
+async def cmd_menu(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Главное меню:", reply_markup=main_menu())
+
+@dp.callback_query(F.data == "back")
+async def cb_back(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text("Главное меню:", reply_markup=main_menu())
+
+@dp.callback_query(F.data == "add_income")
+async def cb_add_income(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "Выбери категорию дохода:",
+        reply_markup=category_keyboard(INCOME_CATEGORIES, "income")
+    )
+
+@dp.callback_query(F.data == "add_expense")
+async def cb_add_expense(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "Выбери категорию расхода:",
+        reply_markup=category_keyboard(EXPENSE_CATEGORIES, "expense")
+    )
+
+@dp.callback_query(F.data.startswith("income:"))
+async def cb_income_category(callback: CallbackQuery, state: FSMContext):
+    category = callback.data.split(":", 1)[1]
+    await state.update_data(type="income", category=category)
+    await state.set_state(AddTransaction.waiting_amount)
+    await callback.message.edit_text(
+        f"Категория: {category}\n\nВведи сумму в €:",
+        reply_markup=back_button()
+    )
+
+@dp.callback_query(F.data.startswith("expense:"))
+async def cb_expense_category(callback: CallbackQuery, state: FSMContext):
+    category = callback.data.split(":", 1)[1]
+    await state.update_data(type="expense", category=category)
+    await state.set_state(AddTransaction.waiting_amount)
+    await callback.message.edit_text(
+        f"Категория: {category}\n\nВведи сумму в €:",
+        reply_markup=back_button()
+    )
+
+@dp.message(AddTransaction.waiting_amount)
+async def process_amount(message: Message, state: FSMContext):
+    try:
+        amount = float(message.text.replace(",", "."))
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        await message.answer("❌ Введи корректную сумму, например: 150 или 49.50")
+        return
+
+    await state.update_data(amount=amount)
+    await state.set_state(AddTransaction.waiting_comment)
+    await message.answer(
+        "Добавь комментарий (например, фамилию) или пропусти:",
+        reply_markup=skip_comment_keyboard()
+    )
+
+@dp.message(AddTransaction.waiting_comment)
+async def process_comment(message: Message, state: FSMContext):
+    await save_transaction(message, state, comment=message.text)
+
+@dp.callback_query(F.data == "skip_comment", AddTransaction.waiting_comment)
+async def cb_skip_comment(callback: CallbackQuery, state: FSMContext):
+    await save_transaction(callback.message, state, comment=None, from_callback=True)
+
+async def save_transaction(message, state, comment, from_callback=False):
+    data = await state.get_data()
+    type_ = data["type"]
+    category = data["category"]
+    amount = data["amount"]
+
+    add_transaction(type_, category, amount, comment)
+    await state.clear()
+
+    sign = "+" if type_ == "income" else "-"
+    comment_text = f" — {comment}" if comment else ""
+    text = f"✅ Сохранено!\n\n{sign}{amount:.2f} € | {category}{comment_text}\n\nГлавное меню:"
+
+    if from_callback:
+        await message.edit_text(text, reply_markup=main_menu())
+    else:
+        await message.answer(text, reply_markup=main_menu())
+
+@dp.callback_query(F.data == "balance")
+async def cb_balance(callback: CallbackQuery):
+    rows = get_month_transactions()
+    income = sum(r[3] for r in rows if r[1] == "income")
+    expense = sum(r[3] for r in rows if r[1] == "expense")
+    balance = income - expense
+
+    now = datetime.now()
+    month_name = now.strftime("%B %Y")
+
+    text = (
+        f"📊 <b>Баланс за {month_name}</b>\n\n"
+        f"💰 Доходы:   +{income:.2f} €\n"
+        f"💸 Расходы:  -{expense:.2f} €\n"
+        f"{'➕' if balance >= 0 else '➖'} Остаток:   {'+' if balance >= 0 else ''}{balance:.2f} €"
+    )
+    await callback.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "history")
+async def cb_history(callback: CallbackQuery):
+    rows = get_month_transactions()
+    if not rows:
+        await callback.message.edit_text("📋 История пуста за этот месяц.", reply_markup=back_button())
+        return
+
+    lines = []
+    for r in rows[:30]:
+        id_, type_, cat, amount, comment, created_at = r
+        date = datetime.fromisoformat(created_at).strftime("%d.%m")
+        sign = "➕" if type_ == "income" else "➖"
+        comment_text = f" — {comment}" if comment else ""
+        lines.append(f"{sign} {date}  {amount:.2f} €  {cat}{comment_text}")
+
+    text = "📋 <b>История за этот месяц:</b>\n\n" + "\n".join(lines)
+    if len(rows) > 30:
+        text += f"\n\n...и ещё {len(rows) - 30} записей"
+
+    await callback.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "breakdown")
+async def cb_breakdown(callback: CallbackQuery):
+    rows = get_month_transactions()
+    if not rows:
+        await callback.message.edit_text("📈 Нет данных за этот месяц.", reply_markup=back_button())
+        return
+
+    expense_rows = [r for r in rows if r[1] == "expense"]
+    income_rows = [r for r in rows if r[1] == "income"]
+    total_expense = sum(r[3] for r in expense_rows)
+    total_income = sum(r[3] for r in income_rows)
+
+    # Group expenses
+    exp_by_cat = {}
+    for r in expense_rows:
+        exp_by_cat[r[2]] = exp_by_cat.get(r[2], 0) + r[3]
+
+    # Group income
+    inc_by_cat = {}
+    for r in income_rows:
+        inc_by_cat[r[2]] = inc_by_cat.get(r[2], 0) + r[3]
+
+    lines = ["📈 <b>Разбивка за этот месяц:</b>\n"]
+    lines.append("💰 <b>Доходы:</b>")
+    for cat, amt in sorted(inc_by_cat.items(), key=lambda x: -x[1]):
+        pct = (amt / total_income * 100) if total_income else 0
+        lines.append(f"  {cat}: +{amt:.2f} € ({pct:.0f}%)")
+
+    lines.append(f"\n💸 <b>Расходы:</b>")
+    for cat, amt in sorted(exp_by_cat.items(), key=lambda x: -x[1]):
+        pct = (amt / total_expense * 100) if total_expense else 0
+        lines.append(f"  {cat}: -{amt:.2f} € ({pct:.0f}%)")
+
+    await callback.message.edit_text("\n".join(lines), reply_markup=back_button(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "compare")
+async def cb_compare(callback: CallbackQuery):
+    now = datetime.now()
+    cur_month = now.month
+    cur_year = now.year
+    prev_month = cur_month - 1 if cur_month > 1 else 12
+    prev_year = cur_year if cur_month > 1 else cur_year - 1
+
+    cur_rows = get_month_transactions(cur_year, cur_month)
+    prev_rows = get_month_transactions(prev_year, prev_month)
+
+    def by_cat(rows, type_):
+        d = {}
+        for r in rows:
+            if r[1] == type_:
+                d[r[2]] = d.get(r[2], 0) + r[3]
+        return d
+
+    cur_exp = by_cat(cur_rows, "expense")
+    prev_exp = by_cat(prev_rows, "expense")
+    cur_inc = by_cat(cur_rows, "income")
+    prev_inc = by_cat(prev_rows, "income")
+
+    all_exp_cats = set(list(cur_exp.keys()) + list(prev_exp.keys()))
+    all_inc_cats = set(list(cur_inc.keys()) + list(prev_inc.keys()))
+
+    cur_month_name = now.strftime("%b")
+    prev_month_name = datetime(prev_year, prev_month, 1).strftime("%b")
+
+    lines = [f"🔄 <b>Сравнение {prev_month_name} → {cur_month_name}:</b>\n"]
+
+    lines.append("💰 <b>Доходы:</b>")
+    for cat in sorted(all_inc_cats):
+        c = cur_inc.get(cat, 0)
+        p = prev_inc.get(cat, 0)
+        delta = c - p
+        delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
+        lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
+
+    lines.append("\n💸 <b>Расходы:</b>")
+    for cat in sorted(all_exp_cats):
+        c = cur_exp.get(cat, 0)
+        p = prev_exp.get(cat, 0)
+        delta = c - p
+        delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
+        lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
+
+    cur_total = sum(cur_exp.values())
+    prev_total = sum(prev_exp.values())
+    delta_total = cur_total - prev_total
+    lines.append(f"\nИтого расходы: {prev_total:.0f} → {cur_total:.0f} € <b>({'+' if delta_total >= 0 else ''}{delta_total:.0f})</b>")
+
+    await callback.message.edit_text("\n".join(lines), reply_markup=back_button(), parse_mode="HTML")
+
+@dp.callback_query(F.data == "delete_last")
+async def cb_delete_last(callback: CallbackQuery):
+    success = delete_last_transaction()
+    if success:
+        await callback.message.edit_text("🗑 Последняя запись удалена.\n\nГлавное меню:", reply_markup=main_menu())
+    else:
+        await callback.message.edit_text("❌ Нет записей для удаления.", reply_markup=main_menu())
+
+# --- Main ---
+async def main():
+    init_db()
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
