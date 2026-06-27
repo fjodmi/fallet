@@ -81,6 +81,22 @@ def delete_last_transaction():
     conn.close()
     return False
 
+def get_last_transaction():
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM transactions ORDER BY id DESC LIMIT 1")
+    row = c.fetchone()
+    conn.close()
+    return row
+
+def update_transaction(id_, **kwargs):
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    for field, value in kwargs.items():
+        c.execute(f"UPDATE transactions SET {field} = ? WHERE id = ?", (value, id_))
+    conn.commit()
+    conn.close()
+
 def save_message_id(message_id):
     conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
@@ -100,6 +116,11 @@ class AddTransaction(StatesGroup):
     waiting_amount = State()
     waiting_comment = State()
 
+class EditTransaction(StatesGroup):
+    choosing_field = State()
+    waiting_new_amount = State()
+    waiting_new_comment = State()
+
 def main_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Доход", callback_data="add_income"),
@@ -108,7 +129,8 @@ def main_menu():
          InlineKeyboardButton(text="📋 История", callback_data="history")],
         [InlineKeyboardButton(text="📈 Разбивка", callback_data="breakdown"),
          InlineKeyboardButton(text="🔄 Сравнение", callback_data="compare")],
-        [InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last")],
+        [InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last"),
+         InlineKeyboardButton(text="✏️ Редактировать", callback_data="edit_last")],
         [InlineKeyboardButton(text="🧹 Очистить чат", callback_data="clear_chat")],
     ])
 
@@ -422,6 +444,113 @@ async def cb_clear_chat(callback: CallbackQuery, state: FSMContext):
     save_message_id(sent.message_id)
 
 
+
+# --- Edit last transaction ---
+def edit_field_keyboard(tx_id):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💰 Сумма", callback_data=f"edit_field:{tx_id}:amount"),
+         InlineKeyboardButton(text="📂 Категория", callback_data=f"edit_field:{tx_id}:category")],
+        [InlineKeyboardButton(text="💳 Метод", callback_data=f"edit_field:{tx_id}:method"),
+         InlineKeyboardButton(text="💬 Комментарий", callback_data=f"edit_field:{tx_id}:comment")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
+    ])
+
+@dp.callback_query(F.data == "edit_last")
+async def cb_edit_last(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    row = get_last_transaction()
+    if not row:
+        await callback.message.edit_text("❌ Нет транзакций для редактирования.", reply_markup=main_menu())
+        return
+    id_, type_, cat, amount, payment_method, comment, created_at = row
+    sign = "+" if type_ == "income" else "-"
+    method_text = "💳 Карта" if payment_method == "card" else "💵 Наличные"
+    comment_text = f" — {comment}" if comment else ""
+    text = (f"✏️ <b>Последняя транзакция:</b>\n\n"
+            f"{sign}{amount:.2f} € | {cat} | {method_text}{comment_text}\n\n"
+            f"Что хочешь изменить?")
+    await callback.message.edit_text(text, reply_markup=edit_field_keyboard(id_), parse_mode="HTML")
+    await state.set_state(EditTransaction.choosing_field)
+
+@dp.callback_query(F.data.startswith("edit_field:"))
+async def cb_edit_field(callback: CallbackQuery, state: FSMContext):
+    _, tx_id, field = callback.data.split(":")
+    await state.update_data(tx_id=int(tx_id), field=field)
+
+    if field == "amount":
+        await state.set_state(EditTransaction.waiting_new_amount)
+        await callback.message.edit_text("Введи новую сумму в €:", reply_markup=back_button())
+
+    elif field == "category":
+        row = get_last_transaction()
+        type_ = row[1]
+        cats = INCOME_CATEGORIES if type_ == "income" else EXPENSE_CATEGORIES
+        prefix = f"edit_cat:{tx_id}"
+        await callback.message.edit_text("Выбери новую категорию:",
+                                          reply_markup=category_keyboard(cats, prefix))
+
+    elif field == "method":
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="💳 Карта", callback_data=f"edit_method:{tx_id}:card"),
+             InlineKeyboardButton(text="💵 Наличные", callback_data=f"edit_method:{tx_id}:cash")],
+            [InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
+        ])
+        await callback.message.edit_text("Выбери способ оплаты:", reply_markup=kb)
+
+    elif field == "comment":
+        await state.set_state(EditTransaction.waiting_new_comment)
+        await callback.message.edit_text("Введи новый комментарий или напиши 'нет' чтобы удалить:",
+                                          reply_markup=back_button())
+
+@dp.callback_query(F.data.startswith("edit_cat:"))
+async def cb_edit_cat(callback: CallbackQuery, state: FSMContext):
+    parts = callback.data.split(":", 2)
+    tx_id = int(parts[1])
+    category = parts[2]
+    update_transaction(tx_id, category=category)
+    await state.clear()
+    await callback.message.edit_text(f"✅ Категория изменена на {category}\n\nГлавное меню:", reply_markup=main_menu())
+
+@dp.callback_query(F.data.startswith("edit_method:"))
+async def cb_edit_method(callback: CallbackQuery, state: FSMContext):
+    _, tx_id, method = callback.data.split(":")
+    update_transaction(int(tx_id), payment_method=method)
+    await state.clear()
+    method_text = "💳 Карта" if method == "card" else "💵 Наличные"
+    await callback.message.edit_text(f"✅ Метод изменён на {method_text}\n\nГлавное меню:", reply_markup=main_menu())
+
+@dp.message(EditTransaction.waiting_new_amount)
+async def process_edit_amount(message: Message, state: FSMContext):
+    try:
+        amount = float(message.text.replace(",", "."))
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        await message.answer("❌ Введи корректную сумму, например: 150 или 49.50")
+        return
+    data = await state.get_data()
+    update_transaction(data["tx_id"], amount=amount)
+    await state.clear()
+    try:
+        await message.delete()
+    except:
+        pass
+    sent = await message.answer(f"✅ Сумма изменена на {amount:.2f} €\n\nГлавное меню:", reply_markup=main_menu())
+    save_message_id(sent.message_id)
+
+@dp.message(EditTransaction.waiting_new_comment)
+async def process_edit_comment(message: Message, state: FSMContext):
+    data = await state.get_data()
+    new_comment = None if message.text.lower() in ["нет", "no", "-"] else message.text
+    update_transaction(data["tx_id"], comment=new_comment)
+    await state.clear()
+    try:
+        await message.delete()
+    except:
+        pass
+    comment_text = f"«{new_comment}»" if new_comment else "удалён"
+    sent = await message.answer(f"✅ Комментарий {comment_text}\n\nГлавное меню:", reply_markup=main_menu())
+    save_message_id(sent.message_id)
 
 # --- AI free text handler ---
 async def parse_transaction_with_ai(text: str) -> dict | None:
