@@ -285,34 +285,19 @@ async def save_transaction(message, state, comment, from_callback=False):
 
 # --- Report helpers ---
 async def show_balance(source):
+    from card import generate_balance_card
+    from aiogram.types import BufferedInputFile
     rows = get_month_transactions()
     income_card = sum(r[3] for r in rows if r[1] == "income" and r[4] == "card")
     income_cash = sum(r[3] for r in rows if r[1] == "income" and r[4] == "cash")
     expense_card = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "card")
     expense_cash = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "cash")
-    total_income = income_card + income_cash
-    total_expense = expense_card + expense_cash
-    balance = total_income - total_expense
-    balance_card = income_card - expense_card
-    balance_cash = income_cash - expense_cash
     now = datetime.now()
     month_name = now.strftime("%B %Y")
-    text = (
-        f"📊 <b>Баланс за {month_name}</b>\n\n"
-        f"💰 Доходы: +{total_income:.2f} €\n"
-        f"   💳 Карта:     +{income_card:.2f} €\n"
-        f"   💵 Наличные:  +{income_cash:.2f} €\n\n"
-        f"💸 Расходы: -{total_expense:.2f} €\n"
-        f"   💳 Карта:     -{expense_card:.2f} €\n"
-        f"   💵 Наличные:  -{expense_cash:.2f} €\n\n"
-        f"{'➕' if balance >= 0 else '➖'} <b>Остаток: {'+' if balance >= 0 else ''}{balance:.2f} €</b>\n"
-        f"   💳 Карта:     {'+' if balance_card >= 0 else ''}{balance_card:.2f} €\n"
-        f"   💵 Наличные:  {'+' if balance_cash >= 0 else ''}{balance_cash:.2f} €"
-    )
-    if isinstance(source, Message):
-        await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
-    else:
-        await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
+    buf = generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name)
+    photo = BufferedInputFile(buf.read(), filename="balance.png")
+    msg = source if isinstance(source, Message) else source.message
+    await msg.answer_photo(photo, reply_markup=back_button())
 
 async def show_history(source):
     rows = get_month_transactions()
