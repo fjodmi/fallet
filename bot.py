@@ -447,16 +447,6 @@ async def cb_clear_chat(callback: CallbackQuery, state: FSMContext):
     sent = await bot.send_message(chat_id, "Главное меню:", reply_markup=main_menu())
     save_message_id(sent.message_id)
 
-async def main():
-    init_db()
-    await set_commands()
-    scheduler.add_job(send_reminder, "cron", hour=22, minute=0)
-    scheduler.start()
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
 
 
 # --- AI free text handler ---
@@ -555,3 +545,14 @@ async def handle_free_text(message: Message, state: FSMContext):
         reply_markup=main_menu()
     )
     save_message_id(sent.message_id)
+
+async def main():
+    init_db()
+    await set_commands()
+    scheduler.add_job(send_reminder, "cron", hour=22, minute=0)
+    scheduler.start()
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
