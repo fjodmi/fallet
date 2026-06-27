@@ -201,7 +201,11 @@ async def cmd_compare(message: Message):
 @dp.callback_query(F.data == "back")
 async def cb_back(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.edit_text("Главное меню:", reply_markup=main_menu())
+    if callback.message.photo:
+        await callback.message.delete()
+        await callback.message.answer("Главное меню:", reply_markup=main_menu())
+    else:
+        await callback.message.edit_text("Главное меню:", reply_markup=main_menu())
 
 @dp.callback_query(F.data == "reminder_done")
 async def cb_reminder_done(callback: CallbackQuery):
