@@ -353,6 +353,8 @@ async def show_breakdown(source):
     await msg.answer_photo(photo, reply_markup=back_button())
 
 async def show_compare(source):
+    from card import generate_compare_card
+    from aiogram.types import BufferedInputFile
     now = datetime.now()
     cur_month = now.month
     cur_year = now.year
@@ -372,40 +374,12 @@ async def show_compare(source):
     prev_exp = by_cat(prev_rows, "expense")
     cur_inc = by_cat(cur_rows, "income")
     prev_inc = by_cat(prev_rows, "income")
-    all_exp_cats = set(list(cur_exp.keys()) + list(prev_exp.keys()))
-    all_inc_cats = set(list(cur_inc.keys()) + list(prev_inc.keys()))
     cur_month_name = now.strftime("%b")
     prev_month_name = datetime(prev_year, prev_month, 1).strftime("%b")
-    lines = [f"🔄 <b>Сравнение {prev_month_name} → {cur_month_name}:</b>\n"]
-    lines.append("💰 <b>Доходы:</b>")
-    for cat in sorted(all_inc_cats):
-        c = cur_inc.get(cat, 0)
-        p = prev_inc.get(cat, 0)
-        delta = c - p
-        delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
-        lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
-    cur_inc_total = sum(cur_inc.values())
-    prev_inc_total = sum(prev_inc.values())
-    delta_inc = cur_inc_total - prev_inc_total
-    lines.append(f"\n<b>Итого доходы: {prev_inc_total:.0f} → {cur_inc_total:.0f} € ({'+' if delta_inc >= 0 else ''}{delta_inc:.0f})</b>")
-    lines.append("\n💸 <b>Расходы:</b>")
-    for cat in sorted(all_exp_cats):
-        c = cur_exp.get(cat, 0)
-        p = prev_exp.get(cat, 0)
-        delta = c - p
-        delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
-        lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
-    cur_exp_total = sum(cur_exp.values())
-    prev_exp_total = sum(prev_exp.values())
-    delta_exp = cur_exp_total - prev_exp_total
-    lines.append(f"<b>Итого расходы: {prev_exp_total:.0f} → {cur_exp_total:.0f} € ({'+' if delta_exp >= 0 else ''}{delta_exp:.0f})</b>")
-    prev_balance = prev_inc_total - prev_exp_total
-    cur_balance = cur_inc_total - cur_exp_total
-    delta_balance = cur_balance - prev_balance
-    lines.append(f"\n💰 <b>Остаток: {prev_balance:.0f} → {cur_balance:.0f} € ({'+' if delta_balance >= 0 else ''}{delta_balance:.0f})</b>")
-    text = "\n".join(lines)
+    buf = generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month_name, prev_month_name)
+    photo = BufferedInputFile(buf.read(), filename="compare.png")
     msg = source if isinstance(source, Message) else source.message
-    await msg.answer(text, reply_markup=back_button(), parse_mode="HTML")
+    await msg.answer_photo(photo, reply_markup=back_button())
 
 @dp.callback_query(F.data == "balance")
 async def cb_balance(callback: CallbackQuery):
