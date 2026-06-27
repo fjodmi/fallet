@@ -44,7 +44,7 @@ def coin_icon(draw, x, y, color):
     draw.ellipse([x, y, x+14, y+14], outline=color, width=2)
 
 def generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name):
-    W, H = 1080, 1080
+    W, H = 1080, 920
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
 
@@ -74,7 +74,10 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
     # Logo FALLET.
     draw.text((INNER_PAD, 72), "FALLET", font=f_logo, fill=TEXT_DARK)
     logo_w = draw.textlength("FALLET", font=f_logo)
-    draw.ellipse([INNER_PAD + logo_w + 6, 88, INNER_PAD + logo_w + 22, 104], fill=DOT_COLOR)
+    dot_size = 14
+    dot_x = INNER_PAD + logo_w + 5
+    dot_y = 72 + 52 - dot_size - 4
+    draw.ellipse([dot_x, dot_y, dot_x + dot_size, dot_y + dot_size], fill=DOT_COLOR)
 
     # Month top right
     month_upper = month_name.upper()
