@@ -330,3 +330,73 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
     img.save(buf, format="PNG")
     buf.seek(0)
     return buf
+
+
+def generate_history_card(rows, month_name):
+    from collections import defaultdict
+
+    W = 1080
+    # Group by date
+    by_date = defaultdict(list)
+    for r in rows:
+        id_, type_, cat, amount, payment_method, comment, created_at = r
+        date = datetime.fromisoformat(created_at).strftime("%d %b")
+        by_date[date].append((type_, cat, amount, payment_method, comment))
+
+    n_rows = sum(len(v) for v in by_date.values())
+    n_groups = len(by_date)
+    H = max(920, 280 + n_groups * 48 + n_rows * 64)
+
+    img = Image.new("RGB", (W, H), BG)
+    draw = ImageDraw.Draw(img)
+
+    f_logo = lf(GROTESK_BOLD, 52)
+    f_label = lf(MONO, 22)
+    f_muted = lf(GROTESK, 26)
+    f_amount = lf(GROTESK_BOLD, 28)
+    f_cat = lf(GROTESK, 28)
+    f_footer = lf(MONO, 20)
+
+    INNER_PAD = 72
+
+    rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
+    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper())
+
+    y = 172
+    draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
+    y += 32
+
+    for date, transactions in sorted(by_date.items(), reverse=True):
+        # Date header
+        draw.text((INNER_PAD, y), date.upper(), font=f_label, fill=TEXT_MUTED)
+        y += 36
+
+        for type_, cat, amount, payment_method, comment in transactions:
+            sign = "+" if type_ == "income" else "-"
+            color = INCOME_COLOR if type_ == "income" else EXPENSE_COLOR
+            method_text = "Card" if payment_method == "card" else "Cash"
+            comment_text = f"  {comment}" if comment else ""
+
+            # Category + comment
+            draw.text((INNER_PAD + 20, y), f"{cat}{comment_text}", font=f_cat, fill=TEXT_DARK)
+
+            # Method
+            method_w = draw.textlength(method_text, font=f_label)
+            draw.text((W - INNER_PAD - 180 - method_w, y + 4), method_text, font=f_label, fill=TEXT_MUTED)
+
+            # Amount
+            amt_text = f"{sign}{amount:,.2f} €"
+            amt_w = draw.textlength(amt_text, font=f_amount)
+            draw.text((W - INNER_PAD - amt_w, y), amt_text, font=f_amount, fill=color)
+            y += 56
+
+        draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
+        y += 24
+
+    now = datetime.now(zoneinfo.ZoneInfo("Europe/Tallinn")).strftime("%d.%m.%Y %H:%M")
+    draw.text((INNER_PAD, y), f"Updated {now}", font=f_footer, fill=TEXT_MUTED)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
