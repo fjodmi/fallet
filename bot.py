@@ -494,13 +494,13 @@ async def cb_delete_last(callback: CallbackQuery):
 async def cb_clear_chat(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     chat_id = callback.message.chat.id
-    msg_ids = get_all_message_ids()
-    for msg_id in msg_ids:
+    current_id = callback.message.message_id
+    # Delete last 50 messages by trying IDs downward
+    for msg_id in range(current_id, max(current_id - 50, 0), -1):
         try:
             await bot.delete_message(chat_id, msg_id)
         except:
             pass
-    clear_message_ids()
     sent = await bot.send_message(chat_id, "Главное меню:", reply_markup=main_menu())
     save_message_id(sent.message_id)
 
