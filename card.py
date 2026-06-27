@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import io
 from datetime import datetime
+import zoneinfo
 
 # Colors
 BG = "#E8E4DA"
@@ -142,7 +143,7 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
     draw.text((mid+4, y2+40), f"{'+' if balance_cash >= 0 else ''}{balance_cash:,.2f} €", font=f_section, fill=cash_color)
 
     # Footer
-    now = datetime.now().strftime("%d.%m.%Y %H:%M")
+    now = datetime.now(zoneinfo.ZoneInfo("Europe/Tallinn")).strftime("%d.%m.%Y %H:%M")
     draw.text((INNER_PAD, H-80), f"Updated {now}", font=f_footer, fill=TEXT_MUTED)
 
     buf = io.BytesIO()
