@@ -100,7 +100,7 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
 
     # --- INCOME / EXPENSE CARDS ---
     card_w = (W - INNER_PAD*2 - 24) // 2
-    card_h = 240
+    card_h = 270
     cx1, cx2 = INNER_PAD, INNER_PAD + card_w + 24
     cy = y
 
@@ -108,21 +108,19 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
     rounded_rect(draw, [cx1, cy, cx1+card_w, cy+card_h], 20, INNER_CARD)
     draw.text((cx1+28, cy+24), "INCOME", font=f_label, fill=TEXT_MUTED)
     draw.text((cx1+28, cy+58), f"+{total_income:,.2f} €", font=f_amount, fill=INCOME_COLOR)
-    # Card icon + amount
-    card_icon(draw, cx1+28, cy+148, TEXT_MUTED)
-    draw.text((cx1+54, cy+143), f"{income_card:,.2f} €", font=f_muted, fill=TEXT_DARK)
-    # Coin icon + amount
-    coin_icon(draw, cx1+28, cy+186, TEXT_MUTED)
-    draw.text((cx1+54, cy+183), f"{income_cash:,.2f} €", font=f_muted, fill=TEXT_DARK)
+    draw.text((cx1+28, cy+143), "Card", font=f_label, fill=TEXT_MUTED)
+    draw.text((cx1+28, cy+170), f"{income_card:,.2f} €", font=f_muted, fill=TEXT_DARK)
+    draw.text((cx1+28, cy+200), "Cash", font=f_label, fill=TEXT_MUTED)
+    draw.text((cx1+28, cy+227), f"{income_cash:,.2f} €", font=f_muted, fill=TEXT_DARK)
 
     # Expense card
     rounded_rect(draw, [cx2, cy, cx2+card_w, cy+card_h], 20, INNER_CARD)
     draw.text((cx2+28, cy+24), "EXPENSES", font=f_label, fill=TEXT_MUTED)
     draw.text((cx2+28, cy+58), f"-{total_expense:,.2f} €", font=f_amount, fill=EXPENSE_COLOR)
-    card_icon(draw, cx2+28, cy+148, TEXT_MUTED)
-    draw.text((cx2+54, cy+143), f"{expense_card:,.2f} €", font=f_muted, fill=TEXT_DARK)
-    coin_icon(draw, cx2+28, cy+186, TEXT_MUTED)
-    draw.text((cx2+54, cy+183), f"{expense_cash:,.2f} €", font=f_muted, fill=TEXT_DARK)
+    draw.text((cx2+28, cy+143), "Card", font=f_label, fill=TEXT_MUTED)
+    draw.text((cx2+28, cy+170), f"{expense_card:,.2f} €", font=f_muted, fill=TEXT_DARK)
+    draw.text((cx2+28, cy+200), "Cash", font=f_label, fill=TEXT_MUTED)
+    draw.text((cx2+28, cy+227), f"{expense_cash:,.2f} €", font=f_muted, fill=TEXT_DARK)
 
     # Divider 2
     y2 = cy + card_h + 36
@@ -132,13 +130,11 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
     # --- CARD / CASH TOTALS ---
     mid = W // 2
 
-    card_icon(draw, INNER_PAD, y2+6, TEXT_MUTED)
-    draw.text((INNER_PAD+28, y2), "Card", font=f_muted, fill=TEXT_MUTED)
+    draw.text((INNER_PAD, y2), "Card", font=f_muted, fill=TEXT_MUTED)
     card_color = INCOME_COLOR if balance_card >= 0 else EXPENSE_COLOR
     draw.text((INNER_PAD, y2+40), f"{'+' if balance_card >= 0 else ''}{balance_card:,.2f} €", font=f_section, fill=card_color)
 
-    coin_icon(draw, mid+4, y2+6, TEXT_MUTED)
-    draw.text((mid+26, y2), "Cash", font=f_muted, fill=TEXT_MUTED)
+    draw.text((mid+4, y2), "Cash", font=f_muted, fill=TEXT_MUTED)
     cash_color = INCOME_COLOR if balance_cash >= 0 else EXPENSE_COLOR
     draw.text((mid+4, y2+40), f"{'+' if balance_cash >= 0 else ''}{balance_cash:,.2f} €", font=f_section, fill=cash_color)
 
