@@ -155,10 +155,10 @@ async def set_commands():
     commands = [
         BotCommand(command="start", description="Главное меню"),
         BotCommand(command="menu", description="Главное меню"),
-        BotCommand(command="баланс", description="Баланс за месяц"),
-        BotCommand(command="история", description="История транзакций"),
-        BotCommand(command="разбивка", description="Разбивка по категориям"),
-        BotCommand(command="сравнение", description="Сравнение с прошлым месяцем"),
+        BotCommand(command="balance", description="Баланс за месяц"),
+        BotCommand(command="history", description="История транзакций"),
+        BotCommand(command="breakdown", description="Разбивка по категориям"),
+        BotCommand(command="compare", description="Сравнение с прошлым месяцем"),
     ]
     await bot.set_my_commands(commands)
 
@@ -182,19 +182,19 @@ async def cmd_menu(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Главное меню:", reply_markup=main_menu())
 
-@dp.message(Command("баланс"))
+@dp.message(Command("balance"))
 async def cmd_balance(message: Message):
     await show_balance(message)
 
-@dp.message(Command("история"))
+@dp.message(Command("history"))
 async def cmd_history(message: Message):
     await show_history(message)
 
-@dp.message(Command("разбивка"))
+@dp.message(Command("breakdown"))
 async def cmd_breakdown(message: Message):
     await show_breakdown(message)
 
-@dp.message(Command("сравнение"))
+@dp.message(Command("compare"))
 async def cmd_compare(message: Message):
     await show_compare(message)
 
