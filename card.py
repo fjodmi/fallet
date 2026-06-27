@@ -197,7 +197,7 @@ def generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense,
 def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_month):
     W = 1080
     n_cats = len(set(list(cur_inc.keys()) + list(prev_inc.keys()))) + len(set(list(cur_exp.keys()) + list(prev_exp.keys())))
-    H = max(920, 480 + n_cats * 80)
+    H = max(980, 540 + n_cats * 80)
 
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
