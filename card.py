@@ -241,7 +241,7 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
             delta_color = INCOME_COLOR if delta >= 0 else EXPENSE_COLOR
         else:
             delta_color = EXPENSE_COLOR if delta >= 0 else INCOME_COLOR
-        arrow = "↑" if delta >= 0 else "↓"
+        arrow = "(+)" if delta >= 0 else "(-)"
         draw.text((COL1, y), cat, font=f_muted, fill=TEXT_DARK)
         prev_text = f"{prev:,.0f} €"
         prev_w = draw.textlength(prev_text, font=f_amount)
@@ -267,7 +267,7 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
     y += 16
     delta_inc = total_cur_inc - total_prev_inc
     delta_color = INCOME_COLOR if delta_inc >= 0 else EXPENSE_COLOR
-    arrow = "↑" if delta_inc >= 0 else "↓"
+    arrow = "(+)" if delta_inc >= 0 else "(-)"
     draw.text((COL1, y), "Total", font=f_section, fill=TEXT_DARK)
     prev_w = draw.textlength(f"{total_prev_inc:,.0f} €", font=f_section)
     draw.text((COL2 + (160-prev_w)//2, y), f"{total_prev_inc:,.0f} €", font=f_section, fill=TEXT_MUTED)
@@ -293,7 +293,7 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
     y += 16
     delta_exp = total_cur_exp - total_prev_exp
     delta_color = EXPENSE_COLOR if delta_exp >= 0 else INCOME_COLOR
-    arrow = "↑" if delta_exp >= 0 else "↓"
+    arrow = "(+)" if delta_exp >= 0 else "(-)"
     draw.text((COL1, y), "Total", font=f_section, fill=TEXT_DARK)
     prev_w = draw.textlength(f"{total_prev_exp:,.0f} €", font=f_section)
     draw.text((COL2 + (160-prev_w)//2, y), f"{total_prev_exp:,.0f} €", font=f_section, fill=TEXT_MUTED)
@@ -309,7 +309,7 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
     delta_bal = cur_bal - prev_bal
     bal_color = INCOME_COLOR if cur_bal >= 0 else EXPENSE_COLOR
     delta_color = INCOME_COLOR if delta_bal >= 0 else EXPENSE_COLOR
-    arrow = "↑" if delta_bal >= 0 else "↓"
+    arrow = "(+)" if delta_bal >= 0 else "(-)"
     # BALANCE label on same line as numbers
     prev_text = f"{prev_bal:,.0f} €"
     prev_w = draw.textlength(prev_text, font=f_total)
