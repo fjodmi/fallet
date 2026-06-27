@@ -16,6 +16,8 @@ USER_ID = int(os.getenv("USER_ID", "0"))
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+import time
+_last_clear_time = 0
 scheduler = AsyncIOScheduler(timezone="Europe/Tallinn")
 
 # --- DB ---
@@ -224,8 +226,13 @@ async def send_reminder():
 # --- Handlers ---
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
-    import logging
-    logging.info(f"CMD_START triggered by message_id={message.message_id} text={message.text}")
+    global _last_clear_time
+    if time.time() - _last_clear_time < 3:
+        try:
+            await message.delete()
+        except:
+            pass
+        return
     await state.clear()
     try:
         await message.delete()
