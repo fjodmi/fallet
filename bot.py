@@ -2,18 +2,21 @@ import logging
 import sqlite3
 from datetime import datetime
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import os
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+USER_ID = int(os.getenv("USER_ID", "0"))
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+scheduler = AsyncIOScheduler(timezone="Europe/Tallinn")
 
 # --- DB ---
 def init_db():
@@ -30,7 +33,6 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-    # migrate existing db if needed
     try:
         c.execute("ALTER TABLE transactions ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'card'")
         conn.commit()
@@ -137,6 +139,38 @@ def skip_comment_keyboard():
         [InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
     ])
 
+def reminder_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Да, всё внесено", callback_data="reminder_done"),
+        ],
+        [
+            InlineKeyboardButton(text="➖ Внести расход", callback_data="add_expense"),
+            InlineKeyboardButton(text="➕ Внести доход", callback_data="add_income"),
+        ]
+    ])
+
+# --- Slash commands setup ---
+async def set_commands():
+    commands = [
+        BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="menu", description="Главное меню"),
+        BotCommand(command="баланс", description="Баланс за месяц"),
+        BotCommand(command="история", description="История транзакций"),
+        BotCommand(command="разбивка", description="Разбивка по категориям"),
+        BotCommand(command="сравнение", description="Сравнение с прошлым месяцем"),
+    ]
+    await bot.set_my_commands(commands)
+
+# --- Reminder job ---
+async def send_reminder():
+    if USER_ID:
+        await bot.send_message(
+            USER_ID,
+            "🔔 Привет! Ты внёс все траты за сегодня?",
+            reply_markup=reminder_keyboard()
+        )
+
 # --- Handlers ---
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
@@ -148,10 +182,30 @@ async def cmd_menu(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Главное меню:", reply_markup=main_menu())
 
+@dp.message(Command("баланс"))
+async def cmd_balance(message: Message):
+    await show_balance(message)
+
+@dp.message(Command("история"))
+async def cmd_history(message: Message):
+    await show_history(message)
+
+@dp.message(Command("разбивка"))
+async def cmd_breakdown(message: Message):
+    await show_breakdown(message)
+
+@dp.message(Command("сравнение"))
+async def cmd_compare(message: Message):
+    await show_compare(message)
+
 @dp.callback_query(F.data == "back")
 async def cb_back(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_text("Главное меню:", reply_markup=main_menu())
+
+@dp.callback_query(F.data == "reminder_done")
+async def cb_reminder_done(callback: CallbackQuery):
+    await callback.message.edit_text("👍 Отлично, так держать!")
 
 @dp.callback_query(F.data == "add_income")
 async def cb_add_income(callback: CallbackQuery):
@@ -200,7 +254,6 @@ async def process_amount(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("❌ Введи корректную сумму, например: 150 или 49.50")
         return
-
     await state.update_data(amount=amount)
     await state.set_state(AddTransaction.waiting_comment)
     await message.answer("Добавь комментарий (например, фамилию) или пропусти:", reply_markup=skip_comment_keyboard())
@@ -219,38 +272,31 @@ async def save_transaction(message, state, comment, from_callback=False):
     category = data["category"]
     amount = data["amount"]
     payment_method = data.get("payment_method", "card")
-
     add_transaction(type_, category, amount, payment_method, comment)
     await state.clear()
-
     sign = "+" if type_ == "income" else "-"
     method_emoji = "💳" if payment_method == "card" else "💵"
     comment_text = f" — {comment}" if comment else ""
     text = f"✅ Сохранено!\n\n{sign}{amount:.2f} € | {category} | {method_emoji}{comment_text}\n\nГлавное меню:"
-
     if from_callback:
         await message.edit_text(text, reply_markup=main_menu())
     else:
         await message.answer(text, reply_markup=main_menu())
 
-@dp.callback_query(F.data == "balance")
-async def cb_balance(callback: CallbackQuery):
+# --- Report helpers ---
+async def show_balance(source):
     rows = get_month_transactions()
-
     income_card = sum(r[3] for r in rows if r[1] == "income" and r[4] == "card")
     income_cash = sum(r[3] for r in rows if r[1] == "income" and r[4] == "cash")
     expense_card = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "card")
     expense_cash = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "cash")
-
     total_income = income_card + income_cash
     total_expense = expense_card + expense_cash
     balance = total_income - total_expense
     balance_card = income_card - expense_card
     balance_cash = income_cash - expense_cash
-
     now = datetime.now()
     month_name = now.strftime("%B %Y")
-
     text = (
         f"📊 <b>Баланс за {month_name}</b>\n\n"
         f"💰 Доходы: +{total_income:.2f} €\n"
@@ -263,71 +309,68 @@ async def cb_balance(callback: CallbackQuery):
         f"   💳 Карта:     {'+' if balance_card >= 0 else ''}{balance_card:.2f} €\n"
         f"   💵 Наличные:  {'+' if balance_cash >= 0 else ''}{balance_cash:.2f} €"
     )
-    await callback.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
+    if isinstance(source, Message):
+        await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
+    else:
+        await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
 
-@dp.callback_query(F.data == "history")
-async def cb_history(callback: CallbackQuery):
+async def show_history(source):
     rows = get_month_transactions()
     if not rows:
-        await callback.message.edit_text("📋 История пуста за этот месяц.", reply_markup=back_button())
-        return
+        text = "📋 История пуста за этот месяц."
+    else:
+        lines = []
+        for r in rows[:30]:
+            id_, type_, cat, amount, payment_method, comment, created_at = r
+            date = datetime.fromisoformat(created_at).strftime("%d.%m")
+            sign = "➕" if type_ == "income" else "➖"
+            method_emoji = "💳" if payment_method == "card" else "💵"
+            comment_text = f" — {comment}" if comment else ""
+            lines.append(f"{sign} {date}  {amount:.2f} €  {method_emoji} {cat}{comment_text}")
+        text = "📋 <b>История за этот месяц:</b>\n\n" + "\n".join(lines)
+        if len(rows) > 30:
+            text += f"\n\n...и ещё {len(rows) - 30} записей"
+    if isinstance(source, Message):
+        await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
+    else:
+        await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
 
-    lines = []
-    for r in rows[:30]:
-        id_, type_, cat, amount, payment_method, comment, created_at = r
-        date = datetime.fromisoformat(created_at).strftime("%d.%m")
-        sign = "➕" if type_ == "income" else "➖"
-        method_emoji = "💳" if payment_method == "card" else "💵"
-        comment_text = f" — {comment}" if comment else ""
-        lines.append(f"{sign} {date}  {amount:.2f} €  {method_emoji} {cat}{comment_text}")
-
-    text = "📋 <b>История за этот месяц:</b>\n\n" + "\n".join(lines)
-    if len(rows) > 30:
-        text += f"\n\n...и ещё {len(rows) - 30} записей"
-
-    await callback.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
-
-@dp.callback_query(F.data == "breakdown")
-async def cb_breakdown(callback: CallbackQuery):
+async def show_breakdown(source):
     rows = get_month_transactions()
     if not rows:
-        await callback.message.edit_text("📈 Нет данных за этот месяц.", reply_markup=back_button())
-        return
+        text = "📈 Нет данных за этот месяц."
+    else:
+        expense_rows = [r for r in rows if r[1] == "expense"]
+        income_rows = [r for r in rows if r[1] == "income"]
+        total_expense = sum(r[3] for r in expense_rows)
+        total_income = sum(r[3] for r in income_rows)
+        exp_by_cat = {}
+        for r in expense_rows:
+            exp_by_cat[r[2]] = exp_by_cat.get(r[2], 0) + r[3]
+        inc_by_cat = {}
+        for r in income_rows:
+            inc_by_cat[r[2]] = inc_by_cat.get(r[2], 0) + r[3]
+        lines = ["📈 <b>Разбивка за этот месяц:</b>\n"]
+        lines.append("💰 <b>Доходы:</b>")
+        for cat, amt in sorted(inc_by_cat.items(), key=lambda x: -x[1]):
+            pct = (amt / total_income * 100) if total_income else 0
+            lines.append(f"  {cat}: +{amt:.2f} € ({pct:.0f}%)")
+        lines.append("\n💸 <b>Расходы:</b>")
+        for cat, amt in sorted(exp_by_cat.items(), key=lambda x: -x[1]):
+            pct = (amt / total_expense * 100) if total_expense else 0
+            lines.append(f"  {cat}: -{amt:.2f} € ({pct:.0f}%)")
+        text = "\n".join(lines)
+    if isinstance(source, Message):
+        await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
+    else:
+        await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
 
-    expense_rows = [r for r in rows if r[1] == "expense"]
-    income_rows = [r for r in rows if r[1] == "income"]
-    total_expense = sum(r[3] for r in expense_rows)
-    total_income = sum(r[3] for r in income_rows)
-
-    exp_by_cat = {}
-    for r in expense_rows:
-        exp_by_cat[r[2]] = exp_by_cat.get(r[2], 0) + r[3]
-
-    inc_by_cat = {}
-    for r in income_rows:
-        inc_by_cat[r[2]] = inc_by_cat.get(r[2], 0) + r[3]
-
-    lines = ["📈 <b>Разбивка за этот месяц:</b>\n"]
-    lines.append("💰 <b>Доходы:</b>")
-    for cat, amt in sorted(inc_by_cat.items(), key=lambda x: -x[1]):
-        pct = (amt / total_income * 100) if total_income else 0
-        lines.append(f"  {cat}: +{amt:.2f} € ({pct:.0f}%)")
-
-    lines.append(f"\n💸 <b>Расходы:</b>")
-    for cat, amt in sorted(exp_by_cat.items(), key=lambda x: -x[1]):
-        pct = (amt / total_expense * 100) if total_expense else 0
-        lines.append(f"  {cat}: -{amt:.2f} € ({pct:.0f}%)")
-
-    await callback.message.edit_text("\n".join(lines), reply_markup=back_button(), parse_mode="HTML")
-
-@dp.callback_query(F.data == "compare")
-async def cb_compare(callback: CallbackQuery):
+async def show_compare(source):
     now = datetime.now()
     cur_month = now.month
     cur_year = now.year
     prev_month = cur_month - 1 if cur_month > 1 else 12
     prev_year = cur_year if cur_month > 1 else cur_year - 1
-
     cur_rows = get_month_transactions(cur_year, cur_month)
     prev_rows = get_month_transactions(prev_year, prev_month)
 
@@ -342,15 +385,11 @@ async def cb_compare(callback: CallbackQuery):
     prev_exp = by_cat(prev_rows, "expense")
     cur_inc = by_cat(cur_rows, "income")
     prev_inc = by_cat(prev_rows, "income")
-
     all_exp_cats = set(list(cur_exp.keys()) + list(prev_exp.keys()))
     all_inc_cats = set(list(cur_inc.keys()) + list(prev_inc.keys()))
-
     cur_month_name = now.strftime("%b")
     prev_month_name = datetime(prev_year, prev_month, 1).strftime("%b")
-
     lines = [f"🔄 <b>Сравнение {prev_month_name} → {cur_month_name}:</b>\n"]
-
     lines.append("💰 <b>Доходы:</b>")
     for cat in sorted(all_inc_cats):
         c = cur_inc.get(cat, 0)
@@ -358,7 +397,6 @@ async def cb_compare(callback: CallbackQuery):
         delta = c - p
         delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
         lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
-
     lines.append("\n💸 <b>Расходы:</b>")
     for cat in sorted(all_exp_cats):
         c = cur_exp.get(cat, 0)
@@ -366,13 +404,31 @@ async def cb_compare(callback: CallbackQuery):
         delta = c - p
         delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
         lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
-
     cur_total = sum(cur_exp.values())
     prev_total = sum(prev_exp.values())
     delta_total = cur_total - prev_total
     lines.append(f"\nИтого расходы: {prev_total:.0f} → {cur_total:.0f} € <b>({'+' if delta_total >= 0 else ''}{delta_total:.0f})</b>")
+    text = "\n".join(lines)
+    if isinstance(source, Message):
+        await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
+    else:
+        await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
 
-    await callback.message.edit_text("\n".join(lines), reply_markup=back_button(), parse_mode="HTML")
+@dp.callback_query(F.data == "balance")
+async def cb_balance(callback: CallbackQuery):
+    await show_balance(callback)
+
+@dp.callback_query(F.data == "history")
+async def cb_history(callback: CallbackQuery):
+    await show_history(callback)
+
+@dp.callback_query(F.data == "breakdown")
+async def cb_breakdown(callback: CallbackQuery):
+    await show_breakdown(callback)
+
+@dp.callback_query(F.data == "compare")
+async def cb_compare(callback: CallbackQuery):
+    await show_compare(callback)
 
 @dp.callback_query(F.data == "delete_last")
 async def cb_delete_last(callback: CallbackQuery):
@@ -385,6 +441,9 @@ async def cb_delete_last(callback: CallbackQuery):
 # --- Main ---
 async def main():
     init_db()
+    await set_commands()
+    scheduler.add_job(send_reminder, "cron", hour=22, minute=0)
+    scheduler.start()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
