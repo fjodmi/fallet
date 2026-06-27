@@ -13,7 +13,7 @@ import os
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 USER_ID = int(os.getenv("USER_ID", "0"))
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 scheduler = AsyncIOScheduler(timezone="Europe/Tallinn")
@@ -224,8 +224,9 @@ async def send_reminder():
 # --- Handlers ---
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
+    import logging
+    logging.info(f"CMD_START triggered by message_id={message.message_id} text={message.text}")
     await state.clear()
-    # Delete the /start command message
     try:
         await message.delete()
     except:
@@ -496,6 +497,7 @@ async def cb_delete_last(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "clear_chat")
 async def cb_clear_chat(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
     await state.clear()
     chat_id = callback.message.chat.id
     current_id = callback.message.message_id
