@@ -309,23 +309,19 @@ async def show_balance(source):
     await msg.answer_photo(photo, reply_markup=back_button())
 
 async def show_history(source):
+    from card import generate_history_card
+    from aiogram.types import BufferedInputFile
     rows = get_month_transactions()
     if not rows:
-        text = "📋 История пуста за этот месяц."
-    else:
-        lines = []
-        for r in rows[:30]:
-            id_, type_, cat, amount, payment_method, comment, created_at = r
-            date = datetime.fromisoformat(created_at).strftime("%d.%m")
-            sign = "➕" if type_ == "income" else "➖"
-            method_emoji = "💳" if payment_method == "card" else "💵"
-            comment_text = f" — {comment}" if comment else ""
-            lines.append(f"{sign} {date}  {amount:.2f} €  {method_emoji} {cat}{comment_text}")
-        text = "📋 <b>История за этот месяц:</b>\n\n" + "\n".join(lines)
-        if len(rows) > 30:
-            text += f"\n\n...и ещё {len(rows) - 30} записей"
+        msg = source if isinstance(source, Message) else source.message
+        await msg.answer("📋 История пуста за этот месяц.", reply_markup=back_button())
+        return
+    now = datetime.now()
+    month_name = now.strftime("%B %Y")
+    buf = generate_history_card(rows[:50], month_name)
+    photo = BufferedInputFile(buf.read(), filename="history.png")
     msg = source if isinstance(source, Message) else source.message
-    await msg.answer(text, reply_markup=back_button(), parse_mode="HTML")
+    await msg.answer_photo(photo, reply_markup=back_button())
 
 async def show_breakdown(source):
     from card import generate_breakdown_card
