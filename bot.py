@@ -457,3 +457,101 @@ async def main():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
+
+
+# --- AI free text handler ---
+async def parse_transaction_with_ai(text: str) -> dict | None:
+    import json
+    import aiohttp
+    
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    system_prompt = """You are a financial transaction parser. 
+The user will describe a transaction in free form (Russian or English).
+Extract and return ONLY a JSON object with these fields:
+- type: "income" or "expense"
+- category: one of ["Work", "Badminton", "Other"] for income, or ["Fixed", "Family", "Transport", "Personal", "Other"] for expense
+- amount: number (positive)
+- payment_method: "card" or "cash"
+- comment: string or null (name, note, etc.)
+
+Rules:
+- бензин/топливо/заправка → expense, Transport
+- еда/обед/кофе/ресторан → expense, Personal
+- тренировка/урок/ученик → income, Badminton
+- зарплата/работа → income, Work
+- нал/наличные/cash → cash, otherwise card
+- если не уверен в payment_method → card
+
+Return ONLY valid JSON, no explanation, no markdown."""
+
+    payload = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 200,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": text}]
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+            },
+            json=payload
+        ) as resp:
+            if resp.status != 200:
+                return None
+            data = await resp.json()
+            raw = data["content"][0]["text"].strip()
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            return json.loads(raw)
+
+
+@dp.message(F.text & ~F.text.startswith("/"))
+async def handle_free_text(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is not None:
+        return
+
+    processing = await message.answer("⏳ Обрабатываю...")
+    save_message_id(message.message_id)
+
+    try:
+        result = await parse_transaction_with_ai(message.text)
+    except Exception:
+        result = None
+
+    await processing.delete()
+
+    if not result or "amount" not in result:
+        sent = await message.answer(
+            "❌ Не смог распознать транзакцию. Попробуй написать иначе, например:\n"
+            "<i>бензин 45 картой</i> или <i>получил 200 нал от Петрова</i>",
+            reply_markup=back_button(),
+            parse_mode="HTML"
+        )
+        save_message_id(sent.message_id)
+        return
+
+    type_ = result.get("type", "expense")
+    category = result.get("category", "Other")
+    amount = float(result.get("amount", 0))
+    payment_method = result.get("payment_method", "card")
+    comment = result.get("comment")
+
+    add_transaction(type_, category, amount, payment_method, comment)
+
+    sign = "+" if type_ == "income" else "-"
+    method_emoji = "💳" if payment_method == "card" else "💵"
+    comment_text = f" — {comment}" if comment else ""
+
+    sent = await message.answer(
+        f"✅ Сохранено!\n\n{sign}{amount:.2f} € | {category} | {method_emoji}{comment_text}\n\nГлавное меню:",
+        reply_markup=main_menu()
+    )
+    save_message_id(sent.message_id)
