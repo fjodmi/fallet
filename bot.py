@@ -33,11 +33,41 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS bot_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
     try:
         c.execute("ALTER TABLE transactions ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'card'")
         conn.commit()
     except:
         pass
+    conn.close()
+
+def save_message_id(message_id):
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO bot_messages (message_id, created_at) VALUES (?, ?)",
+              (message_id, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+def get_all_message_ids():
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    c.execute("SELECT message_id FROM bot_messages ORDER BY id DESC LIMIT 100")
+    rows = c.fetchall()
+    conn.close()
+    return [r[0] for r in rows]
+
+def clear_message_ids():
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM bot_messages")
+    conn.commit()
     conn.close()
 
 def add_transaction(type_, category, amount, payment_method, comment=None):
@@ -103,6 +133,9 @@ def main_menu():
         ],
         [
             InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last"),
+        ],
+        [
+            InlineKeyboardButton(text="🧹 Очистить чат", callback_data="clear_chat"),
         ]
     ])
 
@@ -175,12 +208,16 @@ async def send_reminder():
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("👋 Привет! Я твой финансовый трекер.\n\nВыбери действие:", reply_markup=main_menu())
+    sent = await message.answer("👋 Привет! Я твой финансовый трекер.\n\nВыбери действие:", reply_markup=main_menu())
+    save_message_id(sent.message_id)
+    save_message_id(message.message_id)
 
 @dp.message(Command("menu"))
 async def cmd_menu(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Главное меню:", reply_markup=main_menu())
+    sent = await message.answer("Главное меню:", reply_markup=main_menu())
+    save_message_id(sent.message_id)
+    save_message_id(message.message_id)
 
 @dp.message(Command("balance"))
 async def cmd_balance(message: Message):
@@ -284,8 +321,10 @@ async def save_transaction(message, state, comment, from_callback=False):
     text = f"✅ Сохранено!\n\n{sign}{amount:.2f} € | {category} | {method_emoji}{comment_text}\n\nГлавное меню:"
     if from_callback:
         await message.edit_text(text, reply_markup=main_menu())
+        save_message_id(message.message_id)
     else:
-        await message.answer(text, reply_markup=main_menu())
+        sent = await message.answer(text, reply_markup=main_menu())
+        save_message_id(sent.message_id)
 
 # --- Report helpers ---
 async def show_balance(source):
@@ -325,34 +364,29 @@ async def show_history(source):
         await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
 
 async def show_breakdown(source):
+    from card import generate_breakdown_card
+    from aiogram.types import BufferedInputFile
     rows = get_month_transactions()
     if not rows:
-        text = "📈 Нет данных за этот месяц."
-    else:
-        expense_rows = [r for r in rows if r[1] == "expense"]
-        income_rows = [r for r in rows if r[1] == "income"]
-        total_expense = sum(r[3] for r in expense_rows)
-        total_income = sum(r[3] for r in income_rows)
-        exp_by_cat = {}
-        for r in expense_rows:
-            exp_by_cat[r[2]] = exp_by_cat.get(r[2], 0) + r[3]
-        inc_by_cat = {}
-        for r in income_rows:
-            inc_by_cat[r[2]] = inc_by_cat.get(r[2], 0) + r[3]
-        lines = ["📈 <b>Разбивка за этот месяц:</b>\n"]
-        lines.append("💰 <b>Доходы:</b>")
-        for cat, amt in sorted(inc_by_cat.items(), key=lambda x: -x[1]):
-            pct = (amt / total_income * 100) if total_income else 0
-            lines.append(f"  {cat}: +{amt:.2f} € ({pct:.0f}%)")
-        lines.append("\n💸 <b>Расходы:</b>")
-        for cat, amt in sorted(exp_by_cat.items(), key=lambda x: -x[1]):
-            pct = (amt / total_expense * 100) if total_expense else 0
-            lines.append(f"  {cat}: -{amt:.2f} € ({pct:.0f}%)")
-        text = "\n".join(lines)
-    if isinstance(source, Message):
-        await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
-    else:
-        await source.message.edit_text(text, reply_markup=back_button(), parse_mode="HTML")
+        msg = source if isinstance(source, Message) else source.message
+        await msg.answer("📈 Нет данных за этот месяц.", reply_markup=back_button())
+        return
+    expense_rows = [r for r in rows if r[1] == "expense"]
+    income_rows = [r for r in rows if r[1] == "income"]
+    total_expense = sum(r[3] for r in expense_rows)
+    total_income = sum(r[3] for r in income_rows)
+    exp_by_cat = {}
+    for r in expense_rows:
+        exp_by_cat[r[2]] = exp_by_cat.get(r[2], 0) + r[3]
+    inc_by_cat = {}
+    for r in income_rows:
+        inc_by_cat[r[2]] = inc_by_cat.get(r[2], 0) + r[3]
+    now = datetime.now()
+    month_name = now.strftime("%B %Y")
+    buf = generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense, month_name)
+    photo = BufferedInputFile(buf.read(), filename="breakdown.png")
+    msg = source if isinstance(source, Message) else source.message
+    await msg.answer_photo(photo, reply_markup=back_button())
 
 async def show_compare(source):
     now = datetime.now()
@@ -436,6 +470,20 @@ async def cb_delete_last(callback: CallbackQuery):
         await callback.message.edit_text("🗑 Последняя запись удалена.\n\nГлавное меню:", reply_markup=main_menu())
     else:
         await callback.message.edit_text("❌ Нет записей для удаления.", reply_markup=main_menu())
+
+@dp.callback_query(F.data == "clear_chat")
+async def cb_clear_chat(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    chat_id = callback.message.chat.id
+    msg_ids = get_all_message_ids()
+    for msg_id in msg_ids:
+        try:
+            await bot.delete_message(chat_id, msg_id)
+        except:
+            pass
+    clear_message_ids()
+    sent = await bot.send_message(chat_id, "Главное меню:", reply_markup=main_menu())
+    save_message_id(sent.message_id)
 
 # --- Main ---
 async def main():
