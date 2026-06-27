@@ -312,9 +312,11 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
     arrow = "↑" if delta_bal >= 0 else "↓"
     draw.text((COL1, y), "BALANCE", font=f_label, fill=TEXT_MUTED)
     y += 32
-    draw.text((COL1, y), f"{prev_bal:,.0f} €", font=f_total, fill=TEXT_MUTED)
-    draw.text((COL3, y), f"{cur_bal:,.0f} €", font=f_total, fill=bal_color)
-    draw.text((COL4, y), f"{arrow} {'+' if delta_bal >= 0 else ''}{delta_bal:,.0f}", font=f_section, fill=delta_color)
+    prev_w = draw.textlength(f"{prev_bal:,.0f} €", font=f_total)
+    draw.text((COL2 + (160-prev_w)//2, y), f"{prev_bal:,.0f} €", font=f_total, fill=TEXT_MUTED)
+    cur_w = draw.textlength(f"{cur_bal:,.0f} €", font=f_total)
+    draw.text((COL3 + (160-cur_w)//2, y), f"{cur_bal:,.0f} €", font=f_total, fill=bal_color)
+    draw.text((COL4, y), f"{arrow} {'+' if delta_bal >= 0 else ''}{delta_bal:,.0f}", font=f_total, fill=delta_color)
     y += 64
 
     now = datetime.now(zoneinfo.ZoneInfo("Europe/Tallinn")).strftime("%d.%m.%Y %H:%M")
