@@ -11,7 +11,7 @@ EXPENSE_COLOR = "#FF5A5A"
 DIVIDER = "#DDD8CE"
 CARD_BG = "#EBE7DC"
 
-FONT_PATH = "fonts/Inter.ttf"
+FONT_PATH = "Inter.ttf"
 
 def load_font(size, bold=False):
     try:
