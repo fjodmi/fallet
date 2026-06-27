@@ -404,10 +404,20 @@ async def show_compare(source):
         delta = c - p
         delta_text = f"  <b>({'+' if delta >= 0 else ''}{delta:.0f})</b>" if delta != 0 else ""
         lines.append(f"  {cat}: {p:.0f} → {c:.0f} €{delta_text}")
-    cur_total = sum(cur_exp.values())
-    prev_total = sum(prev_exp.values())
-    delta_total = cur_total - prev_total
-    lines.append(f"\nИтого расходы: {prev_total:.0f} → {cur_total:.0f} € <b>({'+' if delta_total >= 0 else ''}{delta_total:.0f})</b>")
+    cur_inc_total = sum(cur_inc.values())
+    prev_inc_total = sum(prev_inc.values())
+    delta_inc = cur_inc_total - prev_inc_total
+    lines.append(f"\n<b>Итого доходы: {prev_inc_total:.0f} → {cur_inc_total:.0f} € ({'+' if delta_inc >= 0 else ''}{delta_inc:.0f})</b>")
+
+    cur_exp_total = sum(cur_exp.values())
+    prev_exp_total = sum(prev_exp.values())
+    delta_exp = cur_exp_total - prev_exp_total
+    lines.append(f"<b>Итого расходы: {prev_exp_total:.0f} → {cur_exp_total:.0f} € ({'+' if delta_exp >= 0 else ''}{delta_exp:.0f})</b>")
+
+    prev_balance = prev_inc_total - prev_exp_total
+    cur_balance = cur_inc_total - cur_exp_total
+    delta_balance = cur_balance - prev_balance
+    lines.append(f"\n💰 <b>Остаток: {prev_balance:.0f} → {cur_balance:.0f} € ({'+' if delta_balance >= 0 else ''}{delta_balance:.0f})</b>")
     text = "\n".join(lines)
     if isinstance(source, Message):
         await source.answer(text, reply_markup=back_button(), parse_mode="HTML")
