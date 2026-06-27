@@ -379,18 +379,22 @@ async def show_compare(source):
 
 @dp.callback_query(F.data == "balance")
 async def cb_balance(callback: CallbackQuery):
+    await callback.answer()
     await show_balance(callback)
 
 @dp.callback_query(F.data == "history")
 async def cb_history(callback: CallbackQuery):
+    await callback.answer()
     await show_history(callback)
 
 @dp.callback_query(F.data == "breakdown")
 async def cb_breakdown(callback: CallbackQuery):
+    await callback.answer()
     await show_breakdown(callback)
 
 @dp.callback_query(F.data == "compare")
 async def cb_compare(callback: CallbackQuery):
+    await callback.answer()
     await show_compare(callback)
 
 @dp.callback_query(F.data == "delete_last")
