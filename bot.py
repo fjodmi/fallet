@@ -240,9 +240,11 @@ async def cb_back(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     if callback.message.photo:
         await callback.message.delete()
-        await callback.message.answer("Главное меню:", reply_markup=main_menu())
+        sent = await bot.send_message(callback.message.chat.id, "Главное меню:", reply_markup=main_menu())
+        save_message_id(sent.message_id)
     else:
         await callback.message.edit_text("Главное меню:", reply_markup=main_menu())
+        save_message_id(callback.message.message_id)
 
 @dp.callback_query(F.data == "reminder_done")
 async def cb_reminder_done(callback: CallbackQuery):
