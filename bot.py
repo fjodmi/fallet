@@ -13,7 +13,7 @@ import os
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 USER_ID = int(os.getenv("USER_ID", "0"))
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 scheduler = AsyncIOScheduler(timezone="Europe/Tallinn")
@@ -225,9 +225,13 @@ async def send_reminder():
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
+    # Delete the /start command message
+    try:
+        await message.delete()
+    except:
+        pass
     sent = await message.answer("👋 Привет! Я твой финансовый трекер.\n\nВыбери действие:", reply_markup=main_menu())
     save_message_id(sent.message_id)
-    save_message_id(message.message_id)
 
 @dp.message(Command("menu"))
 async def cmd_menu(message: Message, state: FSMContext):
