@@ -318,7 +318,7 @@ async def show_history(source):
         return
     now = datetime.now()
     month_name = now.strftime("%B %Y")
-    buf = generate_history_card(rows[:50], month_name)
+    buf = generate_history_card(rows, month_name)
     photo = BufferedInputFile(buf.read(), filename="history.png")
     msg = source if isinstance(source, Message) else source.message
     await msg.answer_photo(photo, reply_markup=back_button())
