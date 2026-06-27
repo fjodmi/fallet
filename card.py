@@ -150,3 +150,96 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
     img.save(buf, format="PNG")
     buf.seek(0)
     return buf
+
+
+def generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense, month_name):
+    W = 1080
+    # Dynamic height based on number of categories
+    n_cats = len(inc_by_cat) + len(exp_by_cat)
+    H = max(920, 400 + n_cats * 90)
+    
+    img = Image.new("RGB", (W, H), BG)
+    draw = ImageDraw.Draw(img)
+
+    f_logo = lf(GROTESK_BOLD, 52)
+    f_label = lf(MONO, 22)
+    f_amount = lf(GROTESK_BOLD, 38)
+    f_muted = lf(GROTESK, 26)
+    f_footer = lf(MONO, 20)
+    f_section = lf(GROTESK_BOLD, 28)
+
+    INNER_PAD = 72
+    BAR_W = W - INNER_PAD * 2
+
+    rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
+
+    # Logo
+    draw.text((INNER_PAD, 72), "FALLET", font=f_logo, fill=TEXT_DARK)
+    logo_w = draw.textlength("FALLET", font=f_logo)
+    dot_size = 14
+    dot_x = INNER_PAD + logo_w + 5
+    dot_y = 72 + 52 - dot_size - 4
+    draw.ellipse([dot_x, dot_y, dot_x + dot_size, dot_y + dot_size], fill=DOT_COLOR)
+
+    month_upper = month_name.upper()
+    month_w = draw.textlength(month_upper, font=f_label)
+    draw.text((W - INNER_PAD - month_w, 88), month_upper, font=f_label, fill=TEXT_MUTED)
+
+    y = 172
+    draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
+    y += 32
+
+    # INCOME section
+    draw.text((INNER_PAD, y), "INCOME", font=f_label, fill=TEXT_MUTED)
+    y += 36
+
+    for cat, amt in sorted(inc_by_cat.items(), key=lambda x: -x[1]):
+        pct = (amt / total_income * 100) if total_income else 0
+        bar_fill = int(BAR_W * pct / 100)
+
+        draw.text((INNER_PAD, y), cat, font=f_muted, fill=TEXT_DARK)
+        amt_text = f"+{amt:,.2f} €"
+        amt_w = draw.textlength(amt_text, font=f_section)
+        draw.text((W - INNER_PAD - amt_w, y), amt_text, font=f_section, fill=INCOME_COLOR)
+        y += 38
+
+        # Bar background
+        rounded_rect(draw, [INNER_PAD, y, INNER_PAD + BAR_W, y + 14], 7, INNER_CARD)
+        # Bar fill
+        if bar_fill > 0:
+            rounded_rect(draw, [INNER_PAD, y, INNER_PAD + bar_fill, y + 14], 7, INCOME_COLOR)
+        draw.text((W - INNER_PAD - draw.textlength(f"{pct:.0f}%", font=f_label), y - 2), f"{pct:.0f}%", font=f_label, fill=TEXT_MUTED)
+        y += 36
+
+    y += 16
+    draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
+    y += 32
+
+    # EXPENSES section
+    draw.text((INNER_PAD, y), "EXPENSES", font=f_label, fill=TEXT_MUTED)
+    y += 36
+
+    for cat, amt in sorted(exp_by_cat.items(), key=lambda x: -x[1]):
+        pct = (amt / total_expense * 100) if total_expense else 0
+        bar_fill = int(BAR_W * pct / 100)
+
+        draw.text((INNER_PAD, y), cat, font=f_muted, fill=TEXT_DARK)
+        amt_text = f"-{amt:,.2f} €"
+        amt_w = draw.textlength(amt_text, font=f_section)
+        draw.text((W - INNER_PAD - amt_w, y), amt_text, font=f_section, fill=EXPENSE_COLOR)
+        y += 38
+
+        rounded_rect(draw, [INNER_PAD, y, INNER_PAD + BAR_W, y + 14], 7, INNER_CARD)
+        if bar_fill > 0:
+            rounded_rect(draw, [INNER_PAD, y, INNER_PAD + bar_fill, y + 14], 7, EXPENSE_COLOR)
+        draw.text((W - INNER_PAD - draw.textlength(f"{pct:.0f}%", font=f_label), y - 2), f"{pct:.0f}%", font=f_label, fill=TEXT_MUTED)
+        y += 36
+
+    y += 24
+    now = datetime.now(zoneinfo.ZoneInfo("Europe/Tallinn")).strftime("%d.%m.%Y %H:%M")
+    draw.text((INNER_PAD, y), f"Updated {now}", font=f_footer, fill=TEXT_MUTED)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
