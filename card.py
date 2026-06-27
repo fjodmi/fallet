@@ -151,17 +151,15 @@ def generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense,
         pct = (amt / total_income * 100) if total_income else 0
         bar_fill = int(BAR_W * pct / 100)
         draw.text((INNER_PAD, y), cat, font=f_muted, fill=TEXT_DARK)
-        pct_text = f"{pct:.0f}%"
-        pct_w = draw.textlength(pct_text, font=f_label)
         amt_text = f"+{amt:,.2f} €"
         amt_w = draw.textlength(amt_text, font=f_section)
         draw.text((W - INNER_PAD - amt_w, y), amt_text, font=f_section, fill=INCOME_COLOR)
-        draw.text((W - INNER_PAD - amt_w - pct_w - 16, y + 4), pct_text, font=f_label, fill=TEXT_MUTED)
         y += 38
         rounded_rect(draw, [INNER_PAD, y, INNER_PAD + BAR_W, y + 14], 7, INNER_CARD)
         if bar_fill > 0:
             rounded_rect(draw, [INNER_PAD, y, INNER_PAD + bar_fill, y + 14], 7, INCOME_COLOR)
-        y += 36
+        draw.text((INNER_PAD, y + 20), f"{pct:.0f}%", font=f_label, fill=TEXT_MUTED)
+        y += 46
 
     y += 16
     draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
@@ -174,17 +172,15 @@ def generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense,
         pct = (amt / total_expense * 100) if total_expense else 0
         bar_fill = int(BAR_W * pct / 100)
         draw.text((INNER_PAD, y), cat, font=f_muted, fill=TEXT_DARK)
-        pct_text = f"{pct:.0f}%"
-        pct_w = draw.textlength(pct_text, font=f_label)
         amt_text = f"-{amt:,.2f} €"
         amt_w = draw.textlength(amt_text, font=f_section)
         draw.text((W - INNER_PAD - amt_w, y), amt_text, font=f_section, fill=EXPENSE_COLOR)
-        draw.text((W - INNER_PAD - amt_w - pct_w - 16, y + 4), pct_text, font=f_label, fill=TEXT_MUTED)
         y += 38
         rounded_rect(draw, [INNER_PAD, y, INNER_PAD + BAR_W, y + 14], 7, INNER_CARD)
         if bar_fill > 0:
             rounded_rect(draw, [INNER_PAD, y, INNER_PAD + bar_fill, y + 14], 7, EXPENSE_COLOR)
-        y += 36
+        draw.text((INNER_PAD, y + 20), f"{pct:.0f}%", font=f_label, fill=TEXT_MUTED)
+        y += 46
 
     y += 24
     now = datetime.now(zoneinfo.ZoneInfo("Europe/Tallinn")).strftime("%d.%m.%Y %H:%M")
