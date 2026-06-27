@@ -114,8 +114,8 @@ class AddTransaction(StatesGroup):
     waiting_comment = State()
 
 # --- Keyboards ---
-INCOME_CATEGORIES = ["💼 Работа", "🏸 Бадминтон", "📦 Прочее"]
-EXPENSE_CATEGORIES = ["🔒 Фиксированные", "👨‍👩‍👧 Семья", "🚗 Транспорт", "🎯 Личное", "📦 Прочее"]
+INCOME_CATEGORIES = ["Work", "Badminton", "Other"]
+EXPENSE_CATEGORIES = ["Fixed", "Family", "Transport", "Personal", "Other"]
 
 def main_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
