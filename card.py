@@ -197,7 +197,7 @@ def generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense,
 def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_month):
     W = 1080
     n_cats = len(set(list(cur_inc.keys()) + list(prev_inc.keys()))) + len(set(list(cur_exp.keys()) + list(prev_exp.keys())))
-    H = max(980, 500 + n_cats * 80)
+    H = max(920, 480 + n_cats * 80)
 
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
@@ -310,14 +310,18 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
     bal_color = INCOME_COLOR if cur_bal >= 0 else EXPENSE_COLOR
     delta_color = INCOME_COLOR if delta_bal >= 0 else EXPENSE_COLOR
     arrow = "↑" if delta_bal >= 0 else "↓"
-    draw.text((COL1, y), "BALANCE", font=f_label, fill=TEXT_MUTED)
-    y += 36
-    prev_w = draw.textlength(f"{prev_bal:,.0f} €", font=f_total)
-    draw.text((COL2 + (160-prev_w)//2, y), f"{prev_bal:,.0f} €", font=f_total, fill=TEXT_MUTED)
-    cur_w = draw.textlength(f"{cur_bal:,.0f} €", font=f_total)
-    draw.text((COL3 + (160-cur_w)//2, y), f"{cur_bal:,.0f} €", font=f_total, fill=bal_color)
-    draw.text((COL4, y), f"{arrow} {'+' if delta_bal >= 0 else ''}{delta_bal:,.0f}", font=f_total, fill=delta_color)
-    y += 80
+    # BALANCE label on same line as numbers
+    prev_text = f"{prev_bal:,.0f} €"
+    prev_w = draw.textlength(prev_text, font=f_total)
+    cur_text = f"{cur_bal:,.0f} €"
+    cur_w = draw.textlength(cur_text, font=f_total)
+    delta_text = f"{arrow} {'+' if delta_bal >= 0 else ''}{delta_bal:,.0f}"
+
+    draw.text((COL1, y + 8), "BALANCE", font=f_label, fill=TEXT_MUTED)
+    draw.text((COL2 + (160-prev_w)//2, y), prev_text, font=f_total, fill=TEXT_MUTED)
+    draw.text((COL3 + (160-cur_w)//2, y), cur_text, font=f_total, fill=bal_color)
+    draw.text((COL4, y), delta_text, font=f_total, fill=delta_color)
+    y += 64
 
     now = datetime.now(zoneinfo.ZoneInfo("Europe/Tallinn")).strftime("%d.%m.%Y %H:%M")
     draw.text((INNER_PAD, y), f"Updated {now}", font=f_footer, fill=TEXT_MUTED)
