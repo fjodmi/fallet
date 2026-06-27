@@ -3,98 +3,146 @@ import io
 from datetime import datetime
 
 # Colors
-BG = "#F2EEE4"
+BG = "#E8E4DA"
+CARD_BG = "#DEDAB0"  # will override below
+INNER_CARD = "#D8D4CA"
 TEXT_DARK = "#2C2C2C"
-TEXT_MUTED = "#8C8680"
-INCOME_COLOR = "#4A7C59"
-EXPENSE_COLOR = "#FF5A5A"
-DIVIDER = "#DDD8CE"
-CARD_BG = "#EBE7DC"
+TEXT_MUTED = "#8C8780"
+INCOME_COLOR = "#2D6A4F"
+EXPENSE_COLOR = "#E05555"
+DIVIDER = "#CCC8BE"
+DOT_COLOR = "#E05555"
+CARD_SHADOW = "#CECA C0"
 
-FONT_PATH = "Inter.ttf"
+GROTESK = "SpaceGrotesk-Regular.ttf"
+GROTESK_BOLD = "SpaceGrotesk-Bold.ttf"
+MONO = "SpaceMono-Regular.ttf"
 
-def load_font(size, bold=False):
+def lf(path, size):
     try:
-        return ImageFont.truetype(FONT_PATH, size)
+        return ImageFont.truetype(path, size)
     except:
-        return ImageFont.load_default()
+        try:
+            return ImageFont.truetype(GROTESK, size)
+        except:
+            return ImageFont.load_default()
 
-def draw_rounded_rect(draw, xy, radius, fill):
+def rounded_rect(draw, xy, r, fill):
     x1, y1, x2, y2 = xy
-    draw.rectangle([x1 + radius, y1, x2 - radius, y2], fill=fill)
-    draw.rectangle([x1, y1 + radius, x2, y2 - radius], fill=fill)
-    draw.ellipse([x1, y1, x1 + radius * 2, y1 + radius * 2], fill=fill)
-    draw.ellipse([x2 - radius * 2, y1, x2, y1 + radius * 2], fill=fill)
-    draw.ellipse([x1, y2 - radius * 2, x1 + radius * 2, y2], fill=fill)
-    draw.ellipse([x2 - radius * 2, y2 - radius * 2, x2, y2], fill=fill)
+    draw.rectangle([x1+r, y1, x2-r, y2], fill=fill)
+    draw.rectangle([x1, y1+r, x2, y2-r], fill=fill)
+    for cx, cy in [(x1,y1),(x2-2*r,y1),(x1,y2-2*r),(x2-2*r,y2-2*r)]:
+        draw.ellipse([cx, cy, cx+2*r, cy+2*r], fill=fill)
+
+def card_icon(draw, x, y, color):
+    """Draw a simple card icon"""
+    draw.rectangle([x, y+2, x+18, y+13], fill=color, outline=None)
+    draw.rectangle([x, y+5, x+18, y+8], fill=BG)
+
+def coin_icon(draw, x, y, color):
+    """Draw a simple coin icon"""
+    draw.ellipse([x, y, x+14, y+14], outline=color, width=2)
 
 def generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name):
-    W, H = 720, 520
+    W, H = 1080, 1080
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
 
     total_income = income_card + income_cash
     total_expense = expense_card + expense_cash
     balance = total_income - total_expense
+    balance_card = income_card - expense_card
+    balance_cash = income_cash - expense_cash
 
     # Fonts
-    f_small = load_font(22)
-    f_medium = load_font(28)
-    f_large = load_font(52)
-    f_label = load_font(19)
+    f_logo = lf(GROTESK_BOLD, 52)
+    f_balance = lf(GROTESK_BOLD, 96)
+    f_amount = lf(GROTESK_BOLD, 58)
+    f_label = lf(MONO, 24)
+    f_sub = lf(GROTESK, 30)
+    f_muted = lf(GROTESK, 26)
+    f_footer = lf(MONO, 20)
+    f_section = lf(GROTESK_BOLD, 34)
 
-    PAD = 48
+    PAD = 72
+    INNER_PAD = 72
 
-    # Month label
-    draw.text((PAD, PAD), month_name.upper(), font=f_label, fill=TEXT_MUTED)
+    # Outer card with rounded corners
+    rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
 
-    # Balance
-    balance_text = f"{'+' if balance >= 0 else ''}{balance:,.2f} €"
+    # --- HEADER ---
+    # Logo FALLET.
+    draw.text((INNER_PAD, 72), "FALLET", font=f_logo, fill=TEXT_DARK)
+    logo_w = draw.textlength("FALLET", font=f_logo)
+    draw.ellipse([INNER_PAD + logo_w + 6, 88, INNER_PAD + logo_w + 22, 104], fill=DOT_COLOR)
+
+    # Month top right
+    month_upper = month_name.upper()
+    month_w = draw.textlength(month_upper, font=f_label)
+    draw.text((W - INNER_PAD - month_w, 88), month_upper, font=f_label, fill=TEXT_MUTED)
+
+    # --- BALANCE ---
+    y = 180
+    draw.text((INNER_PAD, y), "Balance", font=f_muted, fill=TEXT_MUTED)
+    y += 44
     balance_color = INCOME_COLOR if balance >= 0 else EXPENSE_COLOR
-    draw.text((PAD, PAD + 36), "Остаток", font=f_medium, fill=TEXT_MUTED)
-    draw.text((PAD, PAD + 70), balance_text, font=f_large, fill=balance_color)
+    balance_text = f"{'+' if balance >= 0 else ''}{balance:,.2f} €"
+    draw.text((INNER_PAD, y), balance_text, font=f_balance, fill=balance_color)
 
     # Divider
-    y_div = PAD + 145
-    draw.rectangle([PAD, y_div, W - PAD, y_div + 1], fill=DIVIDER)
+    y += 124
+    draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
+    y += 32
 
-    # Income block
-    y = y_div + 28
-    draw_rounded_rect(draw, [PAD, y, W // 2 - 16, y + 140], 16, CARD_BG)
-    draw.text((PAD + 20, y + 18), "ДОХОДЫ", font=f_label, fill=TEXT_MUTED)
-    draw.text((PAD + 20, y + 44), f"+{total_income:,.2f} €", font=f_medium, fill=INCOME_COLOR)
-    draw.text((PAD + 20, y + 84), f"💳  {income_card:,.2f} €", font=f_label, fill=TEXT_DARK)
-    draw.text((PAD + 20, y + 110), f"💵  {income_cash:,.2f} €", font=f_label, fill=TEXT_DARK)
+    # --- INCOME / EXPENSE CARDS ---
+    card_w = (W - INNER_PAD*2 - 24) // 2
+    card_h = 240
+    cx1, cx2 = INNER_PAD, INNER_PAD + card_w + 24
+    cy = y
 
-    # Expense block
-    x2 = W // 2 + 16
-    draw_rounded_rect(draw, [x2, y, W - PAD, y + 140], 16, CARD_BG)
-    draw.text((x2 + 20, y + 18), "РАСХОДЫ", font=f_label, fill=TEXT_MUTED)
-    draw.text((x2 + 20, y + 44), f"-{total_expense:,.2f} €", font=f_medium, fill=EXPENSE_COLOR)
-    draw.text((x2 + 20, y + 84), f"💳  {expense_card:,.2f} €", font=f_label, fill=TEXT_DARK)
-    draw.text((x2 + 20, y + 110), f"💵  {expense_cash:,.2f} €", font=f_label, fill=TEXT_DARK)
+    # Income card
+    rounded_rect(draw, [cx1, cy, cx1+card_w, cy+card_h], 20, INNER_CARD)
+    draw.text((cx1+28, cy+24), "INCOME", font=f_label, fill=TEXT_MUTED)
+    draw.text((cx1+28, cy+58), f"+{total_income:,.2f} €", font=f_amount, fill=INCOME_COLOR)
+    # Card icon + amount
+    card_icon(draw, cx1+28, cy+148, TEXT_MUTED)
+    draw.text((cx1+54, cy+143), f"{income_card:,.2f} €", font=f_muted, fill=TEXT_DARK)
+    # Coin icon + amount
+    coin_icon(draw, cx1+28, cy+186, TEXT_MUTED)
+    draw.text((cx1+54, cy+183), f"{income_cash:,.2f} €", font=f_muted, fill=TEXT_DARK)
 
-    # Divider
-    y_div2 = y + 160
-    draw.rectangle([PAD, y_div2, W - PAD, y_div2 + 1], fill=DIVIDER)
+    # Expense card
+    rounded_rect(draw, [cx2, cy, cx2+card_w, cy+card_h], 20, INNER_CARD)
+    draw.text((cx2+28, cy+24), "EXPENSES", font=f_label, fill=TEXT_MUTED)
+    draw.text((cx2+28, cy+58), f"-{total_expense:,.2f} €", font=f_amount, fill=EXPENSE_COLOR)
+    card_icon(draw, cx2+28, cy+148, TEXT_MUTED)
+    draw.text((cx2+54, cy+143), f"{expense_card:,.2f} €", font=f_muted, fill=TEXT_DARK)
+    coin_icon(draw, cx2+28, cy+186, TEXT_MUTED)
+    draw.text((cx2+54, cy+183), f"{expense_cash:,.2f} €", font=f_muted, fill=TEXT_DARK)
 
-    # Card / Cash totals
-    y3 = y_div2 + 24
-    draw.text((PAD, y3), "💳  Карта", font=f_label, fill=TEXT_MUTED)
-    card_balance = income_card - expense_card
-    draw.text((PAD, y3 + 28), f"{'+' if card_balance >= 0 else ''}{card_balance:,.2f} €", font=f_medium,
-              fill=INCOME_COLOR if card_balance >= 0 else EXPENSE_COLOR)
+    # Divider 2
+    y2 = cy + card_h + 36
+    draw.rectangle([INNER_PAD, y2, W-INNER_PAD, y2+1], fill=DIVIDER)
+    y2 += 40
 
-    draw.text((W // 2 + 16, y3), "💵  Наличные", font=f_label, fill=TEXT_MUTED)
-    cash_balance = income_cash - expense_cash
-    draw.text((W // 2 + 16, y3 + 28), f"{'+' if cash_balance >= 0 else ''}{cash_balance:,.2f} €", font=f_medium,
-              fill=INCOME_COLOR if cash_balance >= 0 else EXPENSE_COLOR)
+    # --- CARD / CASH TOTALS ---
+    mid = W // 2
+
+    card_icon(draw, INNER_PAD, y2+6, TEXT_MUTED)
+    draw.text((INNER_PAD+28, y2), "Card", font=f_muted, fill=TEXT_MUTED)
+    card_color = INCOME_COLOR if balance_card >= 0 else EXPENSE_COLOR
+    draw.text((INNER_PAD, y2+40), f"{'+' if balance_card >= 0 else ''}{balance_card:,.2f} €", font=f_section, fill=card_color)
+
+    coin_icon(draw, mid+4, y2+6, TEXT_MUTED)
+    draw.text((mid+26, y2), "Cash", font=f_muted, fill=TEXT_MUTED)
+    cash_color = INCOME_COLOR if balance_cash >= 0 else EXPENSE_COLOR
+    draw.text((mid+4, y2+40), f"{'+' if balance_cash >= 0 else ''}{balance_cash:,.2f} €", font=f_section, fill=cash_color)
 
     # Footer
     now = datetime.now().strftime("%d.%m.%Y %H:%M")
-    draw.text((PAD, H - 36), f"Обновлено {now}", font=f_label, fill=TEXT_MUTED)
+    draw.text((INNER_PAD, H-80), f"Updated {now}", font=f_footer, fill=TEXT_MUTED)
 
     buf = io.BytesIO()
-    img.save(buf, format="PNG", quality=95)
+    img.save(buf, format="PNG")
     buf.seek(0)
     return buf
