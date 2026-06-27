@@ -42,7 +42,7 @@ def draw_logo(draw, f_logo, f_label, INNER_PAD, right_text, img=None):
         draw.text((INNER_PAD, 72), "FALLET.", font=f_logo, fill=TEXT_DARK)
         logo_w = int(draw.textlength("FALLET.", font=f_logo))
     right_w = draw.textlength(right_text, font=f_label)
-    draw.text((1080 - INNER_PAD - right_w, 88), right_text, font=f_label, fill=TEXT_MUTED)
+    draw.text((1080 - INNER_PAD - right_w, 83), right_text, font=f_label, fill=TEXT_MUTED)
 
 
 def generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name):
