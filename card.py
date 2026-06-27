@@ -29,13 +29,18 @@ def rounded_rect(draw, xy, r, fill):
     for cx, cy in [(x1,y1),(x2-2*r,y1),(x1,y2-2*r),(x2-2*r,y2-2*r)]:
         draw.ellipse([cx, cy, cx+2*r, cy+2*r], fill=fill)
 
-def draw_logo(draw, f_logo, f_label, INNER_PAD, right_text):
-    draw.text((INNER_PAD, 72), "FALLET", font=f_logo, fill=TEXT_DARK)
-    logo_w = draw.textlength("FALLET", font=f_logo)
-    dot_size = 14
-    dot_x = INNER_PAD + logo_w + 5
-    dot_y = 72 + 52 - dot_size - 4
-    draw.ellipse([dot_x, dot_y, dot_x + dot_size, dot_y + dot_size], fill=DOT_COLOR)
+def draw_logo(draw, f_logo, f_label, INNER_PAD, right_text, img=None):
+    try:
+        logo = Image.open("FALLET-wordmark-light.png").convert("RGBA")
+        logo_h = 52
+        ratio = logo_h / logo.height
+        logo_w = int(logo.width * ratio)
+        logo = logo.resize((logo_w, logo_h), Image.LANCZOS)
+        # Paste with alpha mask
+        img.paste(logo, (INNER_PAD, 68), logo)
+    except Exception as e:
+        draw.text((INNER_PAD, 72), "FALLET.", font=f_logo, fill=TEXT_DARK)
+        logo_w = int(draw.textlength("FALLET.", font=f_logo))
     right_w = draw.textlength(right_text, font=f_label)
     draw.text((1080 - INNER_PAD - right_w, 88), right_text, font=f_label, fill=TEXT_MUTED)
 
@@ -63,7 +68,7 @@ def generate_balance_card(income_card, income_cash, expense_card, expense_cash, 
     INNER_PAD = 72
 
     rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
-    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper())
+    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper(), img)
 
     y = 180
     draw.text((INNER_PAD, y), "Balance", font=f_muted, fill=TEXT_MUTED)
@@ -138,7 +143,7 @@ def generate_breakdown_card(inc_by_cat, exp_by_cat, total_income, total_expense,
     BAR_W = W - INNER_PAD * 2
 
     rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
-    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper())
+    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper(), img)
 
     y = 172
     draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
@@ -214,7 +219,7 @@ def generate_compare_card(cur_inc, prev_inc, cur_exp, prev_exp, cur_month, prev_
 
     rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
     header = f"{prev_month.upper()} vs {cur_month.upper()}"
-    draw_logo(draw, f_logo, f_label, INNER_PAD, header)
+    draw_logo(draw, f_logo, f_label, INNER_PAD, header, img)
 
     y = 172
     draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
@@ -356,7 +361,7 @@ def generate_history_card(rows, month_name):
     INNER_PAD = 72
 
     rounded_rect(draw, [32, 32, W-32, H-32], 40, "#E2DDD3")
-    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper())
+    draw_logo(draw, f_logo, f_label, INNER_PAD, month_name.upper(), img)
 
     y = 172
     draw.rectangle([INNER_PAD, y, W-INNER_PAD, y+1], fill=DIVIDER)
