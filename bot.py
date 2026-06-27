@@ -55,6 +55,23 @@ def save_message_id(message_id):
     conn.commit()
     conn.close()
 
+def migrate_categories():
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    migrations = [
+        ("💼 Работа", "Work"),
+        ("🏸 Бадминтон", "Badminton"),
+        ("📦 Прочее", "Other"),
+        ("🔒 Фиксированные", "Fixed"),
+        ("👨‍👩‍👧 Семья", "Family"),
+        ("🚗 Транспорт", "Transport"),
+        ("🎯 Личное", "Personal"),
+    ]
+    for old_name, new_name in migrations:
+        c.execute("UPDATE transactions SET category = ? WHERE category = ?", (new_name, old_name))
+    conn.commit()
+    conn.close()
+
 def get_all_message_ids():
     conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
@@ -490,6 +507,7 @@ async def cb_clear_chat(callback: CallbackQuery, state: FSMContext):
 # --- Main ---
 async def main():
     init_db()
+    migrate_categories()
     await set_commands()
     scheduler.add_job(send_reminder, "cron", hour=22, minute=0)
     scheduler.start()
