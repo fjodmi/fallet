@@ -29,19 +29,16 @@ def summary():
     year = request.args.get("year", datetime.now().year)
     month = request.args.get("month", datetime.now().month)
     prefix = f"{year}-{int(month):02d}"
-
     conn = get_db()
     rows = conn.execute(
         "SELECT * FROM transactions WHERE created_at LIKE ? ORDER BY created_at DESC",
         (f"{prefix}%",)
     ).fetchall()
     conn.close()
-
     income_card = sum(r["amount"] for r in rows if r["type"] == "income" and r["payment_method"] == "card")
     income_cash = sum(r["amount"] for r in rows if r["type"] == "income" and r["payment_method"] == "cash")
     expense_card = sum(r["amount"] for r in rows if r["type"] == "expense" and r["payment_method"] == "card")
     expense_cash = sum(r["amount"] for r in rows if r["type"] == "expense" and r["payment_method"] == "cash")
-
     return jsonify({
         "month": f"{year}-{int(month):02d}",
         "income": {"card": income_card, "cash": income_cash, "total": income_card + income_cash},
@@ -55,14 +52,12 @@ def transactions():
     year = request.args.get("year", datetime.now().year)
     month = request.args.get("month", datetime.now().month)
     prefix = f"{year}-{int(month):02d}"
-
     conn = get_db()
     rows = conn.execute(
         "SELECT * FROM transactions WHERE created_at LIKE ? ORDER BY created_at DESC",
         (f"{prefix}%",)
     ).fetchall()
     conn.close()
-
     return jsonify([dict(r) for r in rows])
 
 @app.route("/api/breakdown")
@@ -71,14 +66,12 @@ def breakdown():
     year = request.args.get("year", datetime.now().year)
     month = request.args.get("month", datetime.now().month)
     prefix = f"{year}-{int(month):02d}"
-
     conn = get_db()
     rows = conn.execute(
         "SELECT * FROM transactions WHERE created_at LIKE ? ORDER BY created_at DESC",
         (f"{prefix}%",)
     ).fetchall()
     conn.close()
-
     exp_by_cat = {}
     inc_by_cat = {}
     for r in rows:
@@ -86,7 +79,6 @@ def breakdown():
             exp_by_cat[r["category"]] = exp_by_cat.get(r["category"], 0) + r["amount"]
         else:
             inc_by_cat[r["category"]] = inc_by_cat.get(r["category"], 0) + r["amount"]
-
     return jsonify({"income": inc_by_cat, "expense": exp_by_cat})
 
 @app.route("/api/months")
@@ -98,6 +90,81 @@ def months():
     ).fetchall()
     conn.close()
     return jsonify([r["month"] for r in rows])
+
+@app.route("/api/compare")
+@require_auth
+def compare():
+    now = datetime.now()
+    cur_year = int(request.args.get("year", now.year))
+    cur_month = int(request.args.get("month", now.month))
+    prev_month = cur_month - 1 if cur_month > 1 else 12
+    prev_year = cur_year if cur_month > 1 else cur_year - 1
+
+    def get_data(y, m):
+        prefix = f"{y}-{m:02d}"
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT * FROM transactions WHERE created_at LIKE ?", (f"{prefix}%",)
+        ).fetchall()
+        conn.close()
+        inc = sum(r["amount"] for r in rows if r["type"] == "income")
+        exp = sum(r["amount"] for r in rows if r["type"] == "expense")
+        inc_by_cat = {}
+        exp_by_cat = {}
+        for r in rows:
+            if r["type"] == "income":
+                inc_by_cat[r["category"]] = inc_by_cat.get(r["category"], 0) + r["amount"]
+            else:
+                exp_by_cat[r["category"]] = exp_by_cat.get(r["category"], 0) + r["amount"]
+        return {"income": inc, "expense": exp, "income_by_cat": inc_by_cat, "expense_by_cat": exp_by_cat}
+
+    cur = get_data(cur_year, cur_month)
+    prev = get_data(prev_year, prev_month)
+    return jsonify({
+        "current": {"month": f"{cur_year}-{cur_month:02d}", **cur},
+        "previous": {"month": f"{prev_year}-{prev_month:02d}", **prev}
+    })
+
+@app.route("/api/transactions", methods=["POST"])
+@require_auth
+def add_transaction():
+    data = request.get_json()
+    required = ["type", "category", "amount", "payment_method"]
+    for f in required:
+        if f not in data:
+            return jsonify({"error": f"Missing field: {f}"}), 400
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO transactions (type, category, amount, payment_method, comment, created_at) VALUES (?,?,?,?,?,?)",
+        (data["type"], data["category"], float(data["amount"]),
+         data["payment_method"], data.get("comment"), datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/transactions/<int:tx_id>", methods=["PUT"])
+@require_auth
+def update_transaction(tx_id):
+    data = request.get_json()
+    allowed = ["type", "category", "amount", "payment_method", "comment"]
+    conn = get_db()
+    for field in allowed:
+        if field in data:
+            val = float(data[field]) if field == "amount" else data[field]
+            conn.execute(f"UPDATE transactions SET {field}=? WHERE id=?", (val, tx_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/transactions/<int:tx_id>", methods=["DELETE"])
+@require_auth
+def delete_transaction(tx_id):
+    conn = get_db()
+    conn.execute("DELETE FROM transactions WHERE id=?", (tx_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 @app.route("/miniapp.html")
 def miniapp():
