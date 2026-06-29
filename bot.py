@@ -131,6 +131,7 @@ def main_menu():
          InlineKeyboardButton(text="🔄 Сравнение", callback_data="compare")],
         [InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last"),
          InlineKeyboardButton(text="✏️ Редактировать", callback_data="edit_last")],
+        [InlineKeyboardButton(text="🌐 Открыть FALLET", url="https://start-production-e59e.up.railway.app/miniapp.html")],
         [InlineKeyboardButton(text="🧹 Очистить чат", callback_data="clear_chat")],
     ])
 
