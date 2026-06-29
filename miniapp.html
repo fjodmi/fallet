@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FALLET</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --cream: #F2EEE4;
+    --cream-dark: #E8E3D7;
+    --ink: #1A1A18;
+    --ink-soft: #6B6860;
+    --green: #2D6A4F;
+    --green-light: #D8EDE4;
+    --red: #C0392B;
+    --red-light: #FAE3E1;
+    --card-bg: #FFFFFF;
+    --border: #DDD9CF;
+  }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 20px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+
+  .logo span { color: var(--green); }
+
+  .month-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+  }
+
+  .month-selector button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+  }
+
+  .month-selector button:hover { color: var(--ink); }
+
+  .month-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--ink);
+    min-width: 64px;
+    text-align: center;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 16px 20px 0;
+  }
+
+  .tab {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab:first-child { border-radius: 8px 0 0 8px; }
+  .tab:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+  .tab:nth-child(2) { border-left: none; }
+
+  .tab.active {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+
+  /* CONTENT */
+  .content { padding: 16px 20px 32px; }
+
+  /* BALANCE CARD */
+  .balance-card {
+    background: var(--ink);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .balance-card::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .balance-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(242,238,228,0.5);
+    margin-bottom: 8px;
+  }
+
+  .balance-amount {
+    font-size: 40px;
+    font-weight: 700;
+    color: #F2EEE4;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .balance-amount.negative { color: #FF8A80; }
+
+  .balance-euro {
+    font-size: 22px;
+    font-weight: 400;
+    opacity: 0.6;
+  }
+
+  /* STAT ROWS */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+  }
+
+  .stat-card.income { border-top: 3px solid var(--green); }
+  .stat-card.expense { border-top: 3px solid var(--red); }
+
+  .stat-card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  .stat-card-amount {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+
+  .stat-card.income .stat-card-amount { color: var(--green); }
+  .stat-card.expense .stat-card-amount { color: var(--red); }
+
+  .stat-card-sub {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stat-sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stat-sub-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-soft);
+    letter-spacing: 0.5px;
+  }
+
+  .stat-sub-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* BREAKDOWN */
+  .section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 20px 0 10px;
+  }
+
+  .breakdown-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .breakdown-item {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+  }
+
+  .breakdown-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .breakdown-cat {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .breakdown-amt {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .breakdown-amt.income { color: var(--green); }
+  .breakdown-amt.expense { color: var(--red); }
+
+  .breakdown-bar-bg {
+    height: 4px;
+    background: var(--cream-dark);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .breakdown-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  .breakdown-bar-fill.income { background: var(--green); }
+  .breakdown-bar-fill.expense { background: var(--red); }
+
+  /* HISTORY */
+  .history-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .history-item {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .history-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .history-dot.income { background: var(--green); }
+  .history-dot.expense { background: var(--red); }
+
+  .history-info { flex: 1; min-width: 0; }
+
+  .history-cat {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+
+  .history-right { text-align: right; flex-shrink: 0; }
+
+  .history-amount {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .history-amount.income { color: var(--green); }
+  .history-amount.expense { color: var(--red); }
+
+  .history-method {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  /* LOADING / ERROR */
+  .loading {
+    text-align: center;
+    padding: 48px 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .loading-dot {
+    display: inline-block;
+    animation: blink 1.2s infinite;
+  }
+
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; }
+    40% { opacity: 1; }
+  }
+
+  .error-msg {
+    text-align: center;
+    padding: 32px 0;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* PAGE VISIBILITY */
+  .page { display: none; }
+  .page.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">FALLET<span>.</span></div>
+  <div class="month-selector">
+    <button id="prev-month">‹</button>
+    <div class="month-label" id="month-label">—</div>
+    <button id="next-month">›</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="overview">Баланс</button>
+  <button class="tab" data-tab="breakdown">Разбивка</button>
+  <button class="tab" data-tab="history">История</button>
+</div>
+
+<div class="content">
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div id="overview-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
+  </div>
+
+  <!-- BREAKDOWN -->
+  <div class="page" id="page-breakdown">
+    <div id="breakdown-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div id="history-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'https://start-production-e59e.up.railway.app';
+const API_KEY = 'fallet2026';
+
+const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1;
+let availableMonths = [];
+let cache = {};
+
+function fmt(n) {
+  return new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+function monthKey(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
+
+function updateMonthLabel() {
+  document.getElementById('month-label').textContent = MONTHS_RU[currentMonth - 1].substring(0,3).toUpperCase() + ' ' + currentYear;
+}
+
+async function apiFetch(path) {
+  const key = path;
+  if (cache[key]) return cache[key];
+  const res = await fetch(`${API_BASE}${path}&key=${API_KEY}`);
+  if (!res.ok) throw new Error('API error');
+  const data = await res.json();
+  cache[key] = data;
+  return data;
+}
+
+async function loadOverview() {
+  const el = document.getElementById('overview-content');
+  try {
+    const d = await apiFetch(`/api/summary?year=${currentYear}&month=${currentMonth}`);
+    const bal = d.balance;
+    el.innerHTML = `
+      <div class="balance-card">
+        <div class="balance-label">Баланс месяца</div>
+        <div class="balance-amount ${bal < 0 ? 'negative' : ''}">
+          ${bal < 0 ? '-' : '+'}<span class="balance-euro">€</span>${fmt(Math.abs(bal))}
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card income">
+          <div class="stat-card-label">Доходы</div>
+          <div class="stat-card-amount">€${fmt(d.income.total)}</div>
+          <div class="stat-card-sub">
+            <div class="stat-sub-row">
+              <span class="stat-sub-label">КАРТА</span>
+              <span class="stat-sub-value">€${fmt(d.income.card)}</span>
+            </div>
+            <div class="stat-sub-row">
+              <span class="stat-sub-label">НАЛ</span>
+              <span class="stat-sub-value">€${fmt(d.income.cash)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card expense">
+          <div class="stat-card-label">Расходы</div>
+          <div class="stat-card-amount">€${fmt(d.expense.total)}</div>
+          <div class="stat-card-sub">
+            <div class="stat-sub-row">
+              <span class="stat-sub-label">КАРТА</span>
+              <span class="stat-sub-value">€${fmt(d.expense.card)}</span>
+            </div>
+            <div class="stat-sub-row">
+              <span class="stat-sub-label">НАЛ</span>
+              <span class="stat-sub-value">€${fmt(d.expense.cash)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    el.innerHTML = '<div class="error-msg">Не удалось загрузить данные</div>';
+  }
+}
+
+async function loadBreakdown() {
+  const el = document.getElementById('breakdown-content');
+  try {
+    const d = await apiFetch(`/api/breakdown?year=${currentYear}&month=${currentMonth}`);
+    const incEntries = Object.entries(d.income || {}).sort((a,b) => b[1]-a[1]);
+    const expEntries = Object.entries(d.expense || {}).sort((a,b) => b[1]-a[1]);
+    const maxInc = incEntries.length ? incEntries[0][1] : 1;
+    const maxExp = expEntries.length ? expEntries[0][1] : 1;
+
+    let html = '';
+
+    if (incEntries.length) {
+      html += '<div class="section-title">Доходы</div><div class="breakdown-list">';
+      for (const [cat, amt] of incEntries) {
+        const pct = Math.round((amt / maxInc) * 100);
+        html += `
+          <div class="breakdown-item">
+            <div class="breakdown-item-header">
+              <span class="breakdown-cat">${cat}</span>
+              <span class="breakdown-amt income">+€${fmt(amt)}</span>
+            </div>
+            <div class="breakdown-bar-bg">
+              <div class="breakdown-bar-fill income" style="width:${pct}%"></div>
+            </div>
+          </div>`;
+      }
+      html += '</div>';
+    }
+
+    if (expEntries.length) {
+      html += '<div class="section-title">Расходы</div><div class="breakdown-list">';
+      for (const [cat, amt] of expEntries) {
+        const pct = Math.round((amt / maxExp) * 100);
+        html += `
+          <div class="breakdown-item">
+            <div class="breakdown-item-header">
+              <span class="breakdown-cat">${cat}</span>
+              <span class="breakdown-amt expense">−€${fmt(amt)}</span>
+            </div>
+            <div class="breakdown-bar-bg">
+              <div class="breakdown-bar-fill expense" style="width:${pct}%"></div>
+            </div>
+          </div>`;
+      }
+      html += '</div>';
+    }
+
+    if (!incEntries.length && !expEntries.length) {
+      html = '<div class="error-msg">Нет данных за этот месяц</div>';
+    }
+
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="error-msg">Не удалось загрузить данные</div>';
+  }
+}
+
+async function loadHistory() {
+  const el = document.getElementById('history-content');
+  try {
+    const rows = await apiFetch(`/api/transactions?year=${currentYear}&month=${currentMonth}`);
+    if (!rows.length) {
+      el.innerHTML = '<div class="error-msg">Нет транзакций за этот месяц</div>';
+      return;
+    }
+    let html = '<div class="history-list">';
+    for (const r of rows) {
+      const date = new Date(r.created_at);
+      const dayStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+      const sign = r.type === 'income' ? '+' : '−';
+      const comment = r.comment ? ` · ${r.comment}` : '';
+      const method = r.payment_method === 'card' ? 'КАРТА' : 'НАЛ';
+      html += `
+        <div class="history-item">
+          <div class="history-dot ${r.type}"></div>
+          <div class="history-info">
+            <div class="history-cat">${r.category}${comment}</div>
+            <div class="history-meta">${dayStr}</div>
+          </div>
+          <div class="history-right">
+            <div class="history-amount ${r.type}">${sign}€${fmt(r.amount)}</div>
+            <div class="history-method">${method}</div>
+          </div>
+        </div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="error-msg">Не удалось загрузить данные</div>';
+  }
+}
+
+function clearCache() { cache = {}; }
+
+function loadCurrentTab() {
+  const active = document.querySelector('.tab.active').dataset.tab;
+  if (active === 'overview') loadOverview();
+  else if (active === 'breakdown') loadBreakdown();
+  else if (active === 'history') loadHistory();
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`page-${tab.dataset.tab}`).classList.add('active');
+    loadCurrentTab();
+  });
+});
+
+// Month nav
+document.getElementById('prev-month').addEventListener('click', () => {
+  currentMonth--;
+  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  clearCache();
+  updateMonthLabel();
+  loadCurrentTab();
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+  const now = new Date();
+  if (currentYear === now.getFullYear() && currentMonth === now.getMonth() + 1) return;
+  currentMonth++;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  clearCache();
+  updateMonthLabel();
+  loadCurrentTab();
+});
+
+// Init
+updateMonthLabel();
+loadOverview();
+</script>
+</body>
+</html>
