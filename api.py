@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import sqlite3
 from datetime import datetime
 from functools import wraps
@@ -98,6 +98,10 @@ def months():
     ).fetchall()
     conn.close()
     return jsonify([r["month"] for r in rows])
+
+@app.route("/miniapp.html")
+def miniapp():
+    return send_file("miniapp.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
