@@ -6,379 +6,328 @@
 <title>FALLET</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
-:root {
-  --cream: #F2EEE4;
-  --cream-dark: #E8E3D7;
-  --ink: #1A1A18;
-  --ink-soft: #6B6860;
-  --green: #2D6A4F;
-  --green-light: #D8EDE4;
-  --red: #C0392B;
-  --red-light: #FAE3E1;
-  --white: #FFFFFF;
-  --border: #DDD9CF;
-}
-
-html, body {
-  font-family: 'Space Grotesk', sans-serif;
-  background: var(--cream);
-  color: var(--ink);
-  min-height: 100vh;
-  max-width: 480px;
-  margin: 0 auto;
-  overscroll-behavior: none;
+:root{
+  --cream:#F2EEE4;
+  --cream-dark:#E8E3D7;
+  --ink:#1A1A18;
+  --ink-soft:#8A8680;
+  --green:#2D6A4F;
+  --red:#B83228;
+  --white:#FFFFFF;
+  --border:#DDD9CF;
+  --radius:14px;
 }
 
-/* HEADER */
-.header {
-  padding: 16px 20px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  background: var(--cream);
-  z-index: 10;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+html,body{
+  font-family:'Space Grotesk',sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  min-height:100vh;
+  max-width:430px;
+  margin:0 auto;
+  overscroll-behavior:none;
 }
 
-.logo-img { height: 26px; display: block; }
-
-.month-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 5px 10px;
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 12px;
+  position:sticky;top:0;
+  background:var(--cream);
+  z-index:20;
+  border-bottom:1px solid var(--border);
 }
+.logo-img{height:24px;display:block}
 
-.month-selector button {
-  background: none; border: none; cursor: pointer;
-  color: var(--ink-soft); font-size: 14px; padding: 0 2px; line-height: 1;
+.month-pill{
+  display:flex;align-items:center;gap:4px;
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:5px 10px;
 }
-
-.month-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.5px; text-transform: uppercase;
-  color: var(--ink); min-width: 60px; text-align: center;
+.month-pill button{
+  background:none;border:none;cursor:pointer;
+  color:var(--ink-soft);font-size:15px;line-height:1;padding:0 1px;
 }
-
-/* TABS */
-.tabs {
-  display: flex;
-  padding: 12px 20px 0;
-  gap: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.tabs::-webkit-scrollbar { display: none; }
-
-.tab {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--ink-soft);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-}
-.tab:first-child { border-radius: 8px 0 0 8px; }
-.tab:last-child { border-radius: 0 8px 8px 0; }
-.tab:not(:first-child) { border-left: none; }
-.tab.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-
-/* CONTENT */
-.content { padding: 14px 20px 100px; }
-
-/* PAGE */
-.page { display: none; }
-.page.active { display: block; }
-
-/* BALANCE CARD */
-.balance-card {
-  background: var(--ink);
-  border-radius: 16px;
-  padding: 20px 22px;
-  margin-bottom: 10px;
-  position: relative; overflow: hidden;
-}
-.balance-card::before {
-  content: ''; position: absolute;
-  top: -30px; right: -30px;
-  width: 110px; height: 110px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.04);
-}
-.balance-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
-  color: rgba(242,238,228,0.5); margin-bottom: 6px;
-}
-.balance-amount {
-  font-size: 36px; font-weight: 700;
-  color: #F2EEE4; letter-spacing: -1.5px; line-height: 1;
-}
-.balance-amount.negative { color: #FF8A80; }
-.balance-euro { font-size: 28px; font-weight: 400; opacity: 0.6; vertical-align: baseline; }
-
-/* STAT ROW */
-.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-
-.stat-card {
-  background: var(--white); border-radius: 12px;
-  padding: 12px 14px; border: 1px solid var(--border);
-}
-.stat-card.income { border-top: 3px solid var(--green); }
-.stat-card.expense { border-top: 3px solid var(--red); }
-.stat-card-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase;
-  color: var(--ink-soft); margin-bottom: 5px;
-}
-.stat-card-amount { font-size: 19px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
-.stat-card.income .stat-card-amount { color: var(--green); }
-.stat-card.expense .stat-card-amount { color: var(--red); }
-.stat-card-sub { margin-top: 7px; display: flex; flex-direction: column; gap: 3px; }
-.stat-sub-row { display: flex; justify-content: space-between; align-items: center; }
-.stat-sub-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--ink-soft); }
-.stat-sub-value { font-size: 11px; font-weight: 600; color: var(--ink); }
-
-/* SECTION TITLE */
-.section-title {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--ink-soft); margin: 18px 0 8px;
+.month-pill button:hover{color:var(--ink)}
+.month-text{
+  font-family:'Space Mono',monospace;
+  font-size:10px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;
+  color:var(--ink);min-width:58px;text-align:center;
 }
 
-/* BREAKDOWN */
-.breakdown-list { display: flex; flex-direction: column; gap: 6px; }
-.breakdown-item {
-  background: var(--white); border-radius: 10px;
-  padding: 11px 13px; border: 1px solid var(--border);
+/* ── TABS ── */
+.tabs{
+  display:flex;padding:10px 16px 0;
+  gap:0;overflow-x:auto;scrollbar-width:none;
 }
-.breakdown-item-header {
-  display: flex; justify-content: space-between;
-  align-items: center; margin-bottom: 6px;
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  padding:7px 13px;border:1px solid var(--border);
+  background:transparent;color:var(--ink-soft);cursor:pointer;
+  white-space:nowrap;transition:all .15s;
 }
-.breakdown-cat { font-size: 13px; font-weight: 600; }
-.breakdown-amt { font-size: 13px; font-weight: 700; }
-.breakdown-amt.income { color: var(--green); }
-.breakdown-amt.expense { color: var(--red); }
-.breakdown-bar-bg { height: 4px; background: var(--cream-dark); border-radius: 2px; overflow: hidden; }
-.breakdown-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
-.breakdown-bar-fill.income { background: var(--green); }
-.breakdown-bar-fill.expense { background: var(--red); }
+.tab:first-child{border-radius:8px 0 0 8px}
+.tab:last-child{border-radius:0 8px 8px 0}
+.tab:not(:first-child){border-left:none}
+.tab.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 
-/* HISTORY */
-.history-list { display: flex; flex-direction: column; gap: 6px; }
-.history-item {
-  background: var(--white); border-radius: 10px;
-  padding: 11px 13px; border: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; transition: background 0.1s;
-}
-.history-item:active { background: var(--cream-dark); }
-.history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.history-dot.income { background: var(--green); }
-.history-dot.expense { background: var(--red); }
-.history-info { flex: 1; min-width: 0; }
-.history-cat { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.history-meta { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--ink-soft); margin-top: 2px; }
-.history-right { text-align: right; flex-shrink: 0; }
-.history-amount { font-size: 13px; font-weight: 700; letter-spacing: -0.3px; }
-.history-amount.income { color: var(--green); }
-.history-amount.expense { color: var(--red); }
-.history-method { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--ink-soft); margin-top: 2px; }
+/* ── CONTENT ── */
+.content{padding:14px 16px 88px}
+.page{display:none}.page.active{display:block}
 
-/* COMPARE */
-.compare-row {
-  background: var(--white); border-radius: 10px;
-  padding: 13px 14px; border: 1px solid var(--border);
-  margin-bottom: 6px;
+/* ── BALANCE CARD ── */
+.bal-card{
+  background:var(--ink);border-radius:var(--radius);
+  padding:18px 20px 20px;margin-bottom:10px;
+  position:relative;overflow:hidden;
 }
-.compare-row-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-.compare-cat { font-size: 13px; font-weight: 600; }
-.compare-months { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.compare-month-block { }
-.compare-month-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; color: var(--ink-soft); letter-spacing: 0.5px; margin-bottom: 2px;
+.bal-card::after{
+  content:'';position:absolute;
+  width:140px;height:140px;border-radius:50%;
+  background:rgba(255,255,255,.04);
+  top:-40px;right:-40px;pointer-events:none;
 }
-.compare-month-val { font-size: 14px; font-weight: 700; }
-.compare-month-val.income { color: var(--green); }
-.compare-month-val.expense { color: var(--red); }
-.compare-month-val.neutral { color: var(--ink); }
-.compare-delta {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700; margin-top: 1px;
+.bal-label{
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(242,238,228,.45);margin-bottom:8px;
 }
-.compare-delta.up { color: var(--green); }
-.compare-delta.down { color: var(--red); }
+.bal-amount{
+  font-size:42px;font-weight:700;letter-spacing:-2px;line-height:1;
+  color:#F2EEE4;display:flex;align-items:baseline;gap:3px;
+}
+.bal-amount.neg{color:#FF8A80}
+.bal-sign{font-size:28px;font-weight:400;opacity:.55}
+.bal-eur{font-size:26px;font-weight:400;opacity:.55;margin-right:1px}
 
-/* FAB */
-.fab {
-  position: fixed; bottom: 24px; right: 20px;
-  width: 52px; height: 52px; border-radius: 50%;
-  background: var(--ink); color: var(--cream);
-  border: none; font-size: 24px;
-  cursor: pointer; display: flex;
-  align-items: center; justify-content: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  z-index: 100; transition: transform 0.15s;
+/* ── STAT ROW ── */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.stat-card{
+  background:var(--white);border-radius:var(--radius);
+  padding:12px 14px;border:1px solid var(--border);
 }
-.fab:active { transform: scale(0.93); }
+.stat-card.inc{border-top:2px solid var(--green)}
+.stat-card.exp{border-top:2px solid var(--red)}
+.stat-lbl{
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:4px;
+}
+.stat-amt{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1}
+.stat-card.inc .stat-amt{color:var(--green)}
+.stat-card.exp .stat-amt{color:var(--red)}
+.stat-sub{margin-top:8px;display:flex;flex-direction:column;gap:3px}
+.stat-sub-row{display:flex;justify-content:space-between}
+.stat-sub-lbl{font-family:'Space Mono',monospace;font-size:9px;color:var(--ink-soft)}
+.stat-sub-val{font-size:11px;font-weight:600;color:var(--ink)}
 
-/* MODAL */
-.modal-overlay {
-  display: none; position: fixed;
-  inset: 0; background: rgba(0,0,0,0.4);
-  z-index: 200; align-items: flex-end;
-  justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-
-.modal {
-  background: var(--cream);
-  border-radius: 20px 20px 0 0;
-  padding: 20px 20px 40px;
-  width: 100%; max-width: 480px;
-  max-height: 90vh; overflow-y: auto;
-  animation: slideUp 0.25s ease;
-}
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+/* ── SECTION TITLE ── */
+.sec-title{
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--ink-soft);margin:18px 0 8px;
 }
 
-.modal-handle {
-  width: 36px; height: 4px;
-  background: var(--border); border-radius: 2px;
-  margin: 0 auto 16px;
+/* ── BREAKDOWN ── */
+.bk-list{display:flex;flex-direction:column;gap:6px}
+.bk-item{
+  background:var(--white);border-radius:10px;
+  padding:11px 13px;border:1px solid var(--border);
 }
-.modal-title {
-  font-size: 17px; font-weight: 700;
-  letter-spacing: -0.3px; margin-bottom: 18px;
+.bk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.bk-cat{font-size:13px;font-weight:600}
+.bk-amt{font-size:13px;font-weight:700}
+.bk-amt.inc{color:var(--green)}.bk-amt.exp{color:var(--red)}
+.bk-bar{height:3px;background:var(--cream-dark);border-radius:2px;overflow:hidden}
+.bk-fill{height:100%;border-radius:2px;transition:width .5s}
+.bk-fill.inc{background:var(--green)}.bk-fill.exp{background:var(--red)}
+
+/* ── HISTORY ── */
+.hist-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{
+  background:var(--white);border-radius:10px;
+  padding:10px 13px;border:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:background .1s;
+}
+.hist-item:active{background:var(--cream-dark)}
+.hist-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.hist-dot.inc{background:var(--green)}.hist-dot.exp{background:var(--red)}
+.hist-info{flex:1;min-width:0}
+.hist-cat{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-meta{font-family:'Space Mono',monospace;font-size:9px;color:var(--ink-soft);margin-top:1px}
+.hist-right{text-align:right;flex-shrink:0}
+.hist-amt{font-size:13px;font-weight:700;letter-spacing:-.3px}
+.hist-amt.inc{color:var(--green)}.hist-amt.exp{color:var(--red)}
+.hist-method{font-family:'Space Mono',monospace;font-size:9px;color:var(--ink-soft);margin-top:1px}
+
+/* ── COMPARE ── */
+.cmp-totals{
+  background:var(--white);border-radius:var(--radius);
+  border:1px solid var(--border);overflow:hidden;margin-bottom:10px;
+}
+.cmp-total-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  padding:12px 14px;align-items:center;
+}
+.cmp-total-row+.cmp-total-row{border-top:1px solid var(--border)}
+.cmp-total-label{font-size:12px;font-weight:600;color:var(--ink)}
+.cmp-total-val{font-size:14px;font-weight:700;text-align:right}
+.cmp-total-val.inc{color:var(--green)}.cmp-total-val.exp{color:var(--red)}
+.cmp-total-val.neu{color:var(--ink)}
+.cmp-month-head{
+  font-family:'Space Mono',monospace;
+  font-size:9px;color:var(--ink-soft);letter-spacing:.5px;
+  padding:8px 14px 0;display:grid;grid-template-columns:1fr 1fr 1fr;
+}
+.cmp-month-head span:not(:first-child){text-align:right}
+.cmp-delta{
+  font-family:'Space Mono',monospace;font-size:9px;font-weight:700;
+}
+.cmp-delta.up{color:var(--green)}.cmp-delta.down{color:var(--red)}
+
+.cmp-cat-list{display:flex;flex-direction:column;gap:5px}
+.cmp-cat-item{
+  background:var(--white);border-radius:10px;
+  border:1px solid var(--border);overflow:hidden;
+}
+.cmp-cat-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  padding:10px 13px;align-items:center;
+}
+.cmp-cat-name{font-size:13px;font-weight:600}
+.cmp-cat-val{font-size:13px;font-weight:700;text-align:right}
+.cmp-cat-val.inc{color:var(--green)}.cmp-cat-val.exp{color:var(--red)}
+
+/* ── FAB ── */
+.fab{
+  position:fixed;bottom:22px;right:16px;
+  width:50px;height:50px;border-radius:50%;
+  background:var(--ink);color:var(--cream);
+  border:none;font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.22);
+  z-index:100;transition:transform .15s;
+}
+.fab:active{transform:scale(.92)}
+
+/* ── MODAL ── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.45);z-index:200;
+  align-items:flex-end;justify-content:center;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--cream);
+  border-radius:20px 20px 0 0;
+  padding:16px 16px 36px;
+  width:100%;max-width:430px;
+  max-height:88vh;overflow-y:auto;
+  animation:up .22s ease;
+}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:32px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
+.modal-title{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:16px}
+
+/* ── FORM ── */
+.fg{margin-bottom:13px}
+.fg-label{
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:5px;display:block;
+}
+.fg-input{
+  width:100%;padding:11px 13px;
+  background:var(--white);border:1px solid var(--border);
+  border-radius:10px;font-family:'Space Grotesk',sans-serif;
+  font-size:15px;color:var(--ink);outline:none;
+  transition:border-color .15s;
+}
+.fg-input:focus{border-color:var(--ink)}
+
+/* segmented */
+.seg{display:flex}
+.seg-btn{
+  flex:1;padding:10px 6px;
+  border:1px solid var(--border);
+  background:var(--white);cursor:pointer;
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--ink-soft);transition:all .12s;
+}
+.seg-btn:first-child{border-radius:10px 0 0 10px}
+.seg-btn:last-child{border-radius:0 10px 10px 0}
+.seg-btn:not(:first-child){border-left:none}
+.seg-btn.on-inc{background:var(--green);color:#fff;border-color:var(--green)}
+.seg-btn.on-exp{background:var(--red);color:#fff;border-color:var(--red)}
+.seg-btn.on-dark{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+
+/* cat grid */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.cat-btn{
+  padding:8px 4px;border:1px solid var(--border);
+  background:var(--white);border-radius:8px;cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;font-weight:600;color:var(--ink-soft);
+  text-align:center;transition:all .12s;
+}
+.cat-btn.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+
+/* buttons */
+.btn-main{
+  width:100%;padding:13px;
+  background:var(--ink);color:var(--cream);
+  border:none;border-radius:12px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:opacity .15s;margin-top:4px;
+}
+.btn-main:active{opacity:.85}
+.btn-danger{background:var(--red)}
+.btn-row{display:flex;gap:7px;margin-top:7px}
+.btn-sec{
+  flex:1;padding:12px;background:transparent;
+  color:var(--ink-soft);border:1px solid var(--border);
+  border-radius:12px;font-family:'Space Grotesk',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;
 }
 
-/* FORM */
-.form-group { margin-bottom: 14px; }
-.form-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase;
-  color: var(--ink-soft); margin-bottom: 6px; display: block;
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:84px;left:50%;
+  transform:translateX(-50%) translateY(12px);
+  background:var(--ink);color:var(--cream);
+  padding:9px 16px;border-radius:18px;
+  font-size:12px;font-weight:600;
+  opacity:0;transition:all .25s;
+  z-index:300;white-space:nowrap;pointer-events:none;
 }
-.form-input {
-  width: 100%; padding: 12px 14px;
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
-  font-size: 15px; color: var(--ink); outline: none;
-  transition: border-color 0.15s;
-}
-.form-input:focus { border-color: var(--ink); }
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-.seg-group { display: flex; gap: 0; }
-.seg-btn {
-  flex: 1; padding: 11px 8px;
-  border: 1px solid var(--border);
-  background: var(--white); cursor: pointer;
-  font-family: 'Space Mono', monospace;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.5px; text-transform: uppercase;
-  color: var(--ink-soft); transition: all 0.15s;
-}
-.seg-btn:first-child { border-radius: 10px 0 0 10px; }
-.seg-btn:last-child { border-radius: 0 10px 10px 0; border-left: none; }
-.seg-btn:not(:first-child):not(:last-child) { border-left: none; }
-
-.seg-btn.active-income { background: var(--green); color: white; border-color: var(--green); }
-.seg-btn.active-expense { background: var(--red); color: white; border-color: var(--red); }
-.seg-btn.active-card { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-.seg-btn.active-cash { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-
-.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.cat-btn {
-  padding: 9px 6px; border: 1px solid var(--border);
-  background: var(--white); border-radius: 8px;
-  cursor: pointer; font-family: 'Space Grotesk', sans-serif;
-  font-size: 12px; font-weight: 600; color: var(--ink-soft);
-  text-align: center; transition: all 0.15s;
-}
-.cat-btn.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-
-.btn-primary {
-  width: 100%; padding: 14px;
-  background: var(--ink); color: var(--cream);
-  border: none; border-radius: 12px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 15px; font-weight: 700;
-  cursor: pointer; transition: opacity 0.15s;
-  margin-top: 6px;
-}
-.btn-primary:active { opacity: 0.85; }
-.btn-primary.danger { background: var(--red); }
-
-.btn-row { display: flex; gap: 8px; margin-top: 6px; }
-.btn-secondary {
-  flex: 1; padding: 13px;
-  background: transparent; color: var(--ink-soft);
-  border: 1px solid var(--border); border-radius: 12px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px; font-weight: 600;
-  cursor: pointer;
-}
-
-/* TOAST */
-.toast {
-  position: fixed; bottom: 90px; left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--ink); color: var(--cream);
-  padding: 10px 18px; border-radius: 20px;
-  font-size: 13px; font-weight: 600;
-  opacity: 0; transition: all 0.3s;
-  z-index: 300; white-space: nowrap;
-  pointer-events: none;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* LOADING / ERROR */
-.loading {
-  text-align: center; padding: 40px 0;
-  font-family: 'Space Mono', monospace;
-  font-size: 10px; letter-spacing: 1px;
-  text-transform: uppercase; color: var(--ink-soft);
-}
-.loading-dot { display: inline-block; animation: blink 1.2s infinite; }
-.loading-dot:nth-child(2) { animation-delay: 0.2s; }
-.loading-dot:nth-child(3) { animation-delay: 0.4s; }
-@keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
-
-.empty-msg {
-  text-align: center; padding: 32px 0;
-  font-size: 13px; color: var(--ink-soft);
-}
+/* ── UTIL ── */
+.spin{text-align:center;padding:36px 0;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft)}
+.spin span{display:inline-block;animation:blink 1.2s infinite}
+.spin span:nth-child(2){animation-delay:.2s}.spin span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.15}40%{opacity:1}}
+.empty{text-align:center;padding:30px 0;font-size:13px;color:var(--ink-soft)}
 </style>
 </head>
 <body>
 
 <div class="header">
   <img src="FALLET-wordmark-light.png" class="logo-img" alt="FALLET">
-  <div class="month-selector">
-    <button id="prev-month">‹</button>
-    <div class="month-label" id="month-label">—</div>
-    <button id="next-month">›</button>
+  <div class="month-pill">
+    <button id="prev-m">‹</button>
+    <div class="month-text" id="month-lbl">—</div>
+    <button id="next-m">›</button>
   </div>
 </div>
 
@@ -390,107 +339,85 @@ html, body {
 </div>
 
 <div class="content">
-  <div class="page active" id="page-overview">
-    <div id="overview-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
-  </div>
-  <div class="page" id="page-breakdown">
-    <div id="breakdown-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
-  </div>
-  <div class="page" id="page-history">
-    <div id="history-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
-  </div>
-  <div class="page" id="page-compare">
-    <div id="compare-content"><div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div></div>
-  </div>
+  <div class="page active" id="page-overview"><div class="spin">Загрузка<span>.</span><span>.</span><span>.</span></div></div>
+  <div class="page" id="page-breakdown"><div class="spin">Загрузка<span>.</span><span>.</span><span>.</span></div></div>
+  <div class="page" id="page-history"><div class="spin">Загрузка<span>.</span><span>.</span><span>.</span></div></div>
+  <div class="page" id="page-compare"><div class="spin">Загрузка<span>.</span><span>.</span><span>.</span></div></div>
 </div>
 
 <button class="fab" id="fab">+</button>
 
-<!-- ADD MODAL -->
-<div class="modal-overlay" id="modal-add">
+<!-- ADD -->
+<div class="overlay" id="ov-add">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Новая запись</div>
-
-    <div class="form-group">
-      <label class="form-label">Тип</label>
-      <div class="seg-group">
-        <button class="seg-btn active-income" data-type="income" id="type-income">Доход</button>
-        <button class="seg-btn" data-type="expense" id="type-expense">Расход</button>
+    <div class="fg">
+      <label class="fg-label">Тип</label>
+      <div class="seg">
+        <button class="seg-btn on-inc" id="a-inc">Доход</button>
+        <button class="seg-btn" id="a-exp">Расход</button>
       </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Категория</label>
-      <div class="cat-grid" id="cat-grid"></div>
+    <div class="fg">
+      <label class="fg-label">Категория</label>
+      <div class="cat-grid" id="a-cats"></div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Способ</label>
-      <div class="seg-group">
-        <button class="seg-btn active-card" data-method="card" id="method-card">Карта</button>
-        <button class="seg-btn" data-method="cash" id="method-cash">Наличные</button>
+    <div class="fg">
+      <label class="fg-label">Способ оплаты</label>
+      <div class="seg">
+        <button class="seg-btn on-dark" id="a-card">Карта</button>
+        <button class="seg-btn" id="a-cash">Наличные</button>
       </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Сумма €</label>
-      <input class="form-input" type="number" inputmode="decimal" placeholder="0.00" id="add-amount" step="0.01" min="0">
+    <div class="fg">
+      <label class="fg-label">Сумма €</label>
+      <input class="fg-input" type="number" inputmode="decimal" placeholder="0.00" id="a-amount" step="0.01" min="0">
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Комментарий (необязательно)</label>
-      <input class="form-input" type="text" placeholder="Например, фамилия" id="add-comment">
+    <div class="fg">
+      <label class="fg-label">Комментарий (необязательно)</label>
+      <input class="fg-input" type="text" placeholder="Например, фамилия" id="a-comment">
     </div>
-
-    <button class="btn-primary" id="btn-save">Сохранить</button>
-    <div class="btn-row">
-      <button class="btn-secondary" id="btn-cancel-add">Отмена</button>
-    </div>
+    <button class="btn-main" id="a-save">Сохранить</button>
+    <div class="btn-row"><button class="btn-sec" id="a-cancel">Отмена</button></div>
   </div>
 </div>
 
-<!-- EDIT MODAL -->
-<div class="modal-overlay" id="modal-edit">
+<!-- EDIT -->
+<div class="overlay" id="ov-edit">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Редактировать</div>
-
-    <div class="form-group">
-      <label class="form-label">Тип</label>
-      <div class="seg-group">
-        <button class="seg-btn" data-type="income" id="edit-type-income">Доход</button>
-        <button class="seg-btn" data-type="expense" id="edit-type-expense">Расход</button>
+    <div class="fg">
+      <label class="fg-label">Тип</label>
+      <div class="seg">
+        <button class="seg-btn" id="e-inc">Доход</button>
+        <button class="seg-btn" id="e-exp">Расход</button>
       </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Категория</label>
-      <div class="cat-grid" id="edit-cat-grid"></div>
+    <div class="fg">
+      <label class="fg-label">Категория</label>
+      <div class="cat-grid" id="e-cats"></div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Способ</label>
-      <div class="seg-group">
-        <button class="seg-btn" data-method="card" id="edit-method-card">Карта</button>
-        <button class="seg-btn" data-method="cash" id="edit-method-cash">Наличные</button>
+    <div class="fg">
+      <label class="fg-label">Способ оплаты</label>
+      <div class="seg">
+        <button class="seg-btn" id="e-card">Карта</button>
+        <button class="seg-btn" id="e-cash">Наличные</button>
       </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Сумма €</label>
-      <input class="form-input" type="number" inputmode="decimal" placeholder="0.00" id="edit-amount" step="0.01" min="0">
+    <div class="fg">
+      <label class="fg-label">Сумма €</label>
+      <input class="fg-input" type="number" inputmode="decimal" placeholder="0.00" id="e-amount" step="0.01" min="0">
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Комментарий</label>
-      <input class="form-input" type="text" placeholder="Необязательно" id="edit-comment">
+    <div class="fg">
+      <label class="fg-label">Комментарий</label>
+      <input class="fg-input" type="text" placeholder="Необязательно" id="e-comment">
     </div>
-
-    <button class="btn-primary" id="btn-update">Сохранить изменения</button>
+    <button class="btn-main" id="e-save">Сохранить изменения</button>
     <div class="btn-row">
-      <button class="btn-secondary btn-delete danger" id="btn-delete">Удалить</button>
-      <button class="btn-secondary" id="btn-cancel-edit">Отмена</button>
+      <button class="btn-sec btn-danger" id="e-del" style="color:#fff;background:var(--red);border-color:var(--red)">Удалить</button>
+      <button class="btn-sec" id="e-cancel">Отмена</button>
     </div>
   </div>
 </div>
@@ -498,439 +425,279 @@ html, body {
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'https://start-production-e59e.up.railway.app';
-const KEY = 'fallet2026';
-const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-const INCOME_CATS = ['Work','Badminton','Other'];
-const EXPENSE_CATS = ['Fixed','Family','Transport','Personal','Other'];
+const API='https://start-production-e59e.up.railway.app';
+const KEY='fallet2026';
+const MRU=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const INC_CATS=['Work','Badminton','Other'];
+const EXP_CATS=['Fixed','Family','Transport','Personal','Other'];
 
-let curYear = new Date().getFullYear();
-let curMonth = new Date().getMonth() + 1;
-let cache = {};
-let editId = null;
-let addType = 'income';
-let addCat = 'Work';
-let addMethod = 'card';
-let editType = 'income';
-let editCat = 'Work';
-let editMethod = 'card';
+let Y=new Date().getFullYear(),M=new Date().getMonth()+1;
+let cache={};
+let eId=null,aType='income',aCat='Work',aMethod='card',eType='income',eCat='Work',eMethod='card';
 
-function fmt(n) {
-  return new Intl.NumberFormat('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
+const fmt=n=>new Intl.NumberFormat('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const spin=()=>'<div class="spin">Загрузка<span>.</span><span>.</span><span>.</span></div>';
+const toast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)};
+const updMonth=()=>document.getElementById('month-lbl').textContent=MRU[M-1].substring(0,3).toUpperCase()+' '+Y;
+const clrCache=()=>cache={};
+
+async function api(path,opts={}){
+  const sep=path.includes('?')? '&':'?';
+  const url=`${API}${path}${opts.method?'':sep+'key='+KEY}`;
+  const r=await fetch(url,{...opts,headers:{'X-API-Key':KEY,'Content-Type':'application/json',...(opts.headers||{})}});
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
 }
 
-function loading() {
-  return '<div class="loading">Загрузка<span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span></div>';
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-function updateMonthLabel() {
-  document.getElementById('month-label').textContent =
-    MONTHS_RU[curMonth-1].substring(0,3).toUpperCase() + ' ' + curYear;
-}
-
-async function apiFetch(path, opts={}) {
-  const sep = path.includes('?') ? '&' : '?';
-  const url = `${API}${path}${opts.method ? '' : sep+'key='+KEY}`;
-  const headers = {'X-API-Key': KEY, 'Content-Type': 'application/json', ...(opts.headers||{})};
-  const res = await fetch(url, {...opts, headers});
-  if (!res.ok) throw new Error('API error ' + res.status);
-  return res.json();
-}
-
-function clearCache() { cache = {}; }
-
-/* ---- OVERVIEW ---- */
-async function loadOverview() {
-  const el = document.getElementById('overview-content');
-  el.innerHTML = loading();
-  try {
-    const d = await apiFetch(`/api/summary?year=${curYear}&month=${curMonth}`);
-    const bal = d.balance;
-    el.innerHTML = `
-      <div class="balance-card">
-        <div class="balance-label">Баланс месяца</div>
-        <div class="balance-amount ${bal<0?'negative':''}">
-          ${bal<0?'-':'+'}<span class="balance-euro">€</span>${fmt(Math.abs(bal))}
+/* ── OVERVIEW ── */
+async function loadOverview(){
+  const el=document.getElementById('page-overview');
+  el.innerHTML=spin();
+  try{
+    const d=await api(`/api/summary?year=${Y}&month=${M}`);
+    const b=d.balance;
+    el.innerHTML=`
+    <div class="bal-card">
+      <div class="bal-label">Баланс месяца</div>
+      <div class="bal-amount${b<0?' neg':''}">
+        <span class="bal-sign">${b<0?'−':'+'}</span><span class="bal-eur">€</span>${fmt(Math.abs(b))}
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card inc">
+        <div class="stat-lbl">Доходы</div>
+        <div class="stat-amt">€${fmt(d.income.total)}</div>
+        <div class="stat-sub">
+          <div class="stat-sub-row"><span class="stat-sub-lbl">КАРТА</span><span class="stat-sub-val">€${fmt(d.income.card)}</span></div>
+          <div class="stat-sub-row"><span class="stat-sub-lbl">НАЛ</span><span class="stat-sub-val">€${fmt(d.income.cash)}</span></div>
         </div>
       </div>
-      <div class="stat-row">
-        <div class="stat-card income">
-          <div class="stat-card-label">Доходы</div>
-          <div class="stat-card-amount">€${fmt(d.income.total)}</div>
-          <div class="stat-card-sub">
-            <div class="stat-sub-row"><span class="stat-sub-label">КАРТА</span><span class="stat-sub-value">€${fmt(d.income.card)}</span></div>
-            <div class="stat-sub-row"><span class="stat-sub-label">НАЛ</span><span class="stat-sub-value">€${fmt(d.income.cash)}</span></div>
-          </div>
-        </div>
-        <div class="stat-card expense">
-          <div class="stat-card-label">Расходы</div>
-          <div class="stat-card-amount">€${fmt(d.expense.total)}</div>
-          <div class="stat-card-sub">
-            <div class="stat-sub-row"><span class="stat-sub-label">КАРТА</span><span class="stat-sub-value">€${fmt(d.expense.card)}</span></div>
-            <div class="stat-sub-row"><span class="stat-sub-label">НАЛ</span><span class="stat-sub-value">€${fmt(d.expense.cash)}</span></div>
-          </div>
-        </div>
-      </div>`;
-  } catch(e) { el.innerHTML = '<div class="empty-msg">Не удалось загрузить</div>'; }
-}
-
-/* ---- BREAKDOWN ---- */
-async function loadBreakdown() {
-  const el = document.getElementById('breakdown-content');
-  el.innerHTML = loading();
-  try {
-    const d = await apiFetch(`/api/breakdown?year=${curYear}&month=${curMonth}`);
-    const incEntries = Object.entries(d.income||{}).sort((a,b)=>b[1]-a[1]);
-    const expEntries = Object.entries(d.expense||{}).sort((a,b)=>b[1]-a[1]);
-    const maxInc = incEntries.length ? incEntries[0][1] : 1;
-    const maxExp = expEntries.length ? expEntries[0][1] : 1;
-    let html = '';
-    if (incEntries.length) {
-      html += '<div class="section-title">Доходы</div><div class="breakdown-list">';
-      for (const [cat,amt] of incEntries) {
-        html += `<div class="breakdown-item">
-          <div class="breakdown-item-header"><span class="breakdown-cat">${cat}</span><span class="breakdown-amt income">+€${fmt(amt)}</span></div>
-          <div class="breakdown-bar-bg"><div class="breakdown-bar-fill income" style="width:${Math.round(amt/maxInc*100)}%"></div></div>
-        </div>`;
-      }
-      html += '</div>';
-    }
-    if (expEntries.length) {
-      html += '<div class="section-title">Расходы</div><div class="breakdown-list">';
-      for (const [cat,amt] of expEntries) {
-        html += `<div class="breakdown-item">
-          <div class="breakdown-item-header"><span class="breakdown-cat">${cat}</span><span class="breakdown-amt expense">−€${fmt(amt)}</span></div>
-          <div class="breakdown-bar-bg"><div class="breakdown-bar-fill expense" style="width:${Math.round(amt/maxExp*100)}%"></div></div>
-        </div>`;
-      }
-      html += '</div>';
-    }
-    if (!incEntries.length && !expEntries.length) html = '<div class="empty-msg">Нет данных за этот месяц</div>';
-    el.innerHTML = html;
-  } catch(e) { el.innerHTML = '<div class="empty-msg">Не удалось загрузить</div>'; }
-}
-
-/* ---- HISTORY ---- */
-async function loadHistory() {
-  const el = document.getElementById('history-content');
-  el.innerHTML = loading();
-  try {
-    const rows = await apiFetch(`/api/transactions?year=${curYear}&month=${curMonth}`);
-    if (!rows.length) { el.innerHTML = '<div class="empty-msg">Нет транзакций за этот месяц</div>'; return; }
-    let html = '<div class="history-list">';
-    for (const r of rows) {
-      const date = new Date(r.created_at);
-      const dayStr = date.toLocaleDateString('ru-RU', {day:'numeric', month:'short'});
-      const sign = r.type==='income' ? '+' : '−';
-      const comment = r.comment ? ` · ${r.comment}` : '';
-      const method = r.payment_method==='card' ? 'КАРТА' : 'НАЛ';
-      html += `<div class="history-item" data-id="${r.id}" data-type="${r.type}" data-cat="${r.category}" data-method="${r.payment_method}" data-amount="${r.amount}" data-comment="${r.comment||''}">
-        <div class="history-dot ${r.type}"></div>
-        <div class="history-info">
-          <div class="history-cat">${r.category}${comment}</div>
-          <div class="history-meta">${dayStr}</div>
-        </div>
-        <div class="history-right">
-          <div class="history-amount ${r.type}">${sign}€${fmt(r.amount)}</div>
-          <div class="history-method">${method}</div>
-        </div>
-      </div>`;
-    }
-    html += '</div>';
-    el.innerHTML = html;
-    document.querySelectorAll('.history-item').forEach(item => {
-      item.addEventListener('click', () => openEditModal(item.dataset));
-    });
-  } catch(e) { el.innerHTML = '<div class="empty-msg">Не удалось загрузить</div>'; }
-}
-
-/* ---- COMPARE ---- */
-async function loadCompare() {
-  const el = document.getElementById('compare-content');
-  el.innerHTML = loading();
-  try {
-    const d = await apiFetch(`/api/compare?year=${curYear}&month=${curMonth}`);
-    const cur = d.current;
-    const prev = d.previous;
-    const curLabel = MONTHS_RU[parseInt(cur.month.split('-')[1])-1].substring(0,3).toUpperCase();
-    const prevLabel = MONTHS_RU[parseInt(prev.month.split('-')[1])-1].substring(0,3).toUpperCase();
-
-    function deltaHtml(curVal, prevVal, type) {
-      if (!prevVal) return '';
-      const diff = curVal - prevVal;
-      const pct = Math.round(Math.abs(diff)/prevVal*100);
-      if (diff === 0) return '';
-      const isUp = diff > 0;
-      const cls = type === 'income' ? (isUp ? 'up' : 'down') : (isUp ? 'down' : 'up');
-      return `<div class="compare-delta ${cls}">${isUp?'↑':'↓'} ${pct}%</div>`;
-    }
-
-    let html = '';
-
-    // Totals
-    html += `<div class="compare-row">
-      <div class="compare-row-header"><span class="compare-cat">Итого доходы</span></div>
-      <div class="compare-months">
-        <div class="compare-month-block">
-          <div class="compare-month-label">${curLabel}</div>
-          <div class="compare-month-val income">€${fmt(cur.income)}</div>
-          ${deltaHtml(cur.income, prev.income, 'income')}
-        </div>
-        <div class="compare-month-block">
-          <div class="compare-month-label">${prevLabel}</div>
-          <div class="compare-month-val income">€${fmt(prev.income)}</div>
+      <div class="stat-card exp">
+        <div class="stat-lbl">Расходы</div>
+        <div class="stat-amt">€${fmt(d.expense.total)}</div>
+        <div class="stat-sub">
+          <div class="stat-sub-row"><span class="stat-sub-lbl">КАРТА</span><span class="stat-sub-val">€${fmt(d.expense.card)}</span></div>
+          <div class="stat-sub-row"><span class="stat-sub-lbl">НАЛ</span><span class="stat-sub-val">€${fmt(d.expense.cash)}</span></div>
         </div>
       </div>
     </div>`;
+  }catch{el.innerHTML='<div class="empty">Не удалось загрузить</div>'}
+}
 
-    html += `<div class="compare-row">
-      <div class="compare-row-header"><span class="compare-cat">Итого расходы</span></div>
-      <div class="compare-months">
-        <div class="compare-month-block">
-          <div class="compare-month-label">${curLabel}</div>
-          <div class="compare-month-val expense">€${fmt(cur.expense)}</div>
-          ${deltaHtml(cur.expense, prev.expense, 'expense')}
-        </div>
-        <div class="compare-month-block">
-          <div class="compare-month-label">${prevLabel}</div>
-          <div class="compare-month-val expense">€${fmt(prev.expense)}</div>
-        </div>
+/* ── BREAKDOWN ── */
+async function loadBreakdown(){
+  const el=document.getElementById('page-breakdown');
+  el.innerHTML=spin();
+  try{
+    const d=await api(`/api/breakdown?year=${Y}&month=${M}`);
+    const ie=Object.entries(d.income||{}).sort((a,b)=>b[1]-a[1]);
+    const ee=Object.entries(d.expense||{}).sort((a,b)=>b[1]-a[1]);
+    const mi=ie.length?ie[0][1]:1, me=ee.length?ee[0][1]:1;
+    let h='';
+    if(ie.length){
+      h+='<div class="sec-title">Доходы</div><div class="bk-list">';
+      for(const[c,a]of ie)h+=`<div class="bk-item"><div class="bk-header"><span class="bk-cat">${c}</span><span class="bk-amt inc">+€${fmt(a)}</span></div><div class="bk-bar"><div class="bk-fill inc" style="width:${Math.round(a/mi*100)}%"></div></div></div>`;
+      h+='</div>';
+    }
+    if(ee.length){
+      h+='<div class="sec-title">Расходы</div><div class="bk-list">';
+      for(const[c,a]of ee)h+=`<div class="bk-item"><div class="bk-header"><span class="bk-cat">${c}</span><span class="bk-amt exp">−€${fmt(a)}</span></div><div class="bk-bar"><div class="bk-fill exp" style="width:${Math.round(a/me*100)}%"></div></div></div>`;
+      h+='</div>';
+    }
+    el.innerHTML=h||'<div class="empty">Нет данных за этот месяц</div>';
+  }catch{el.innerHTML='<div class="empty">Не удалось загрузить</div>'}
+}
+
+/* ── HISTORY ── */
+async function loadHistory(){
+  const el=document.getElementById('page-history');
+  el.innerHTML=spin();
+  try{
+    const rows=await api(`/api/transactions?year=${Y}&month=${M}`);
+    if(!rows.length){el.innerHTML='<div class="empty">Нет транзакций за этот месяц</div>';return}
+    let h='<div class="hist-list">';
+    for(const r of rows){
+      const dt=new Date(r.created_at);
+      const ds=dt.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+      const s=r.type==='income'?'+':'−';
+      const cm=r.comment?` · ${r.comment}`:'';
+      const pm=r.payment_method==='card'?'КАРТА':'НАЛ';
+      h+=`<div class="hist-item" data-id="${r.id}" data-type="${r.type}" data-cat="${r.category}" data-method="${r.payment_method}" data-amount="${r.amount}" data-comment="${r.comment||''}">
+        <div class="hist-dot ${r.type==='income'?'inc':'exp'}"></div>
+        <div class="hist-info"><div class="hist-cat">${r.category}${cm}</div><div class="hist-meta">${ds}</div></div>
+        <div class="hist-right"><div class="hist-amt ${r.type==='income'?'inc':'exp'}">${s}€${fmt(r.amount)}</div><div class="hist-method">${pm}</div></div>
+      </div>`;
+    }
+    h+='</div>';
+    el.innerHTML=h;
+    el.querySelectorAll('.hist-item').forEach(i=>i.addEventListener('click',()=>openEdit(i.dataset)));
+  }catch{el.innerHTML='<div class="empty">Не удалось загрузить</div>'}
+}
+
+/* ── COMPARE ── */
+async function loadCompare(){
+  const el=document.getElementById('page-compare');
+  el.innerHTML=spin();
+  try{
+    const d=await api(`/api/compare?year=${Y}&month=${M}`);
+    const cur=d.current,prev=d.previous;
+    const cLbl=MRU[parseInt(cur.month.split('-')[1])-1].substring(0,3).toUpperCase();
+    const pLbl=MRU[parseInt(prev.month.split('-')[1])-1].substring(0,3).toUpperCase();
+
+    const delta=(cv,pv,type)=>{
+      if(!pv||cv===pv)return'';
+      const d=cv-pv,p=Math.round(Math.abs(d)/pv*100);
+      const up=d>0;
+      const cls=type==='income'?(up?'up':'down'):(up?'down':'up');
+      return`<span class="cmp-delta ${cls}">${up?'↑':'↓'}${p}%</span>`;
+    };
+
+    let h=`
+    <div class="cmp-month-head">
+      <span></span><span>${cLbl}</span><span>${pLbl}</span>
+    </div>
+    <div class="cmp-totals">
+      <div class="cmp-total-row">
+        <div class="cmp-total-label">Доходы ${delta(cur.income,prev.income,'income')}</div>
+        <div class="cmp-total-val inc">€${fmt(cur.income)}</div>
+        <div class="cmp-total-val inc">€${fmt(prev.income)}</div>
+      </div>
+      <div class="cmp-total-row">
+        <div class="cmp-total-label">Расходы ${delta(cur.expense,prev.expense,'expense')}</div>
+        <div class="cmp-total-val exp">€${fmt(cur.expense)}</div>
+        <div class="cmp-total-val exp">€${fmt(prev.expense)}</div>
+      </div>
+      <div class="cmp-total-row">
+        <div class="cmp-total-label">Баланс</div>
+        <div class="cmp-total-val neu" style="color:${cur.income-cur.expense>=0?'var(--green)':'var(--red)'}">€${fmt(cur.income-cur.expense)}</div>
+        <div class="cmp-total-val neu" style="color:${prev.income-prev.expense>=0?'var(--green)':'var(--red)'}">€${fmt(prev.income-prev.expense)}</div>
       </div>
     </div>`;
 
-    // By category
-    const allExpCats = new Set([...Object.keys(cur.expense_by_cat||{}), ...Object.keys(prev.expense_by_cat||{})]);
-    if (allExpCats.size) {
-      html += '<div class="section-title">Расходы по категориям</div>';
-      for (const cat of allExpCats) {
-        const cv = cur.expense_by_cat?.[cat] || 0;
-        const pv = prev.expense_by_cat?.[cat] || 0;
-        html += `<div class="compare-row">
-          <div class="compare-row-header"><span class="compare-cat">${cat}</span></div>
-          <div class="compare-months">
-            <div class="compare-month-block">
-              <div class="compare-month-label">${curLabel}</div>
-              <div class="compare-month-val expense">€${fmt(cv)}</div>
-              ${deltaHtml(cv, pv, 'expense')}
-            </div>
-            <div class="compare-month-block">
-              <div class="compare-month-label">${prevLabel}</div>
-              <div class="compare-month-val expense">€${fmt(pv)}</div>
-            </div>
-          </div>
-        </div>`;
+    const allExp=new Set([...Object.keys(cur.expense_by_cat||{}),...Object.keys(prev.expense_by_cat||{})]);
+    if(allExp.size){
+      h+='<div class="sec-title">Расходы по категориям</div><div class="cmp-cat-list">';
+      for(const c of allExp){
+        const cv=cur.expense_by_cat?.[c]||0,pv=prev.expense_by_cat?.[c]||0;
+        h+=`<div class="cmp-cat-item"><div class="cmp-cat-row">
+          <div class="cmp-cat-name">${c} ${delta(cv,pv,'expense')}</div>
+          <div class="cmp-cat-val exp">€${fmt(cv)}</div>
+          <div class="cmp-cat-val exp">€${fmt(pv)}</div>
+        </div></div>`;
       }
+      h+='</div>';
     }
-
-    el.innerHTML = html;
-  } catch(e) { el.innerHTML = '<div class="empty-msg">Не удалось загрузить</div>'; }
+    el.innerHTML=h;
+  }catch{el.innerHTML='<div class="empty">Не удалось загрузить</div>'}
 }
 
-/* ---- ADD MODAL ---- */
-function buildCatGrid(containerId, type, selectedCat, onSelect) {
-  const cats = type === 'income' ? INCOME_CATS : EXPENSE_CATS;
-  const grid = document.getElementById(containerId);
-  grid.innerHTML = '';
-  cats.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = 'cat-btn' + (cat === selectedCat ? ' active' : '');
-    btn.textContent = cat;
-    btn.addEventListener('click', () => {
-      grid.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      onSelect(cat);
-    });
-    grid.appendChild(btn);
+/* ── CATS ── */
+function buildCats(id,type,sel,cb){
+  const cats=type==='income'?INC_CATS:EXP_CATS;
+  const g=document.getElementById(id);
+  g.innerHTML='';
+  cats.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='cat-btn'+(c===sel?' on':'');
+    b.textContent=c;
+    b.onclick=()=>{g.querySelectorAll('.cat-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(c)};
+    g.appendChild(b);
   });
 }
 
-function openAddModal() {
-  addType = 'income'; addCat = 'Work'; addMethod = 'card';
-  document.getElementById('add-amount').value = '';
-  document.getElementById('add-comment').value = '';
-  document.getElementById('type-income').className = 'seg-btn active-income';
-  document.getElementById('type-expense').className = 'seg-btn';
-  document.getElementById('method-card').className = 'seg-btn active-card';
-  document.getElementById('method-cash').className = 'seg-btn';
-  buildCatGrid('cat-grid', addType, addCat, cat => { addCat = cat; });
-  document.getElementById('modal-add').classList.add('open');
-  setTimeout(() => document.getElementById('add-amount').focus(), 300);
+/* ── ADD ── */
+document.getElementById('fab').onclick=()=>{
+  aType='income';aCat='Work';aMethod='card';
+  document.getElementById('a-amount').value='';
+  document.getElementById('a-comment').value='';
+  document.getElementById('a-inc').className='seg-btn on-inc';
+  document.getElementById('a-exp').className='seg-btn';
+  document.getElementById('a-card').className='seg-btn on-dark';
+  document.getElementById('a-cash').className='seg-btn';
+  buildCats('a-cats',aType,aCat,c=>aCat=c);
+  document.getElementById('ov-add').classList.add('open');
+  setTimeout(()=>document.getElementById('a-amount').focus(),300);
+};
+document.getElementById('a-cancel').onclick=()=>document.getElementById('ov-add').classList.remove('open');
+document.getElementById('ov-add').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
+
+document.getElementById('a-inc').onclick=()=>{aType='income';aCat='Work';document.getElementById('a-inc').className='seg-btn on-inc';document.getElementById('a-exp').className='seg-btn';buildCats('a-cats',aType,aCat,c=>aCat=c)};
+document.getElementById('a-exp').onclick=()=>{aType='expense';aCat='Fixed';document.getElementById('a-exp').className='seg-btn on-exp';document.getElementById('a-inc').className='seg-btn';buildCats('a-cats',aType,aCat,c=>aCat=c)};
+document.getElementById('a-card').onclick=()=>{aMethod='card';document.getElementById('a-card').className='seg-btn on-dark';document.getElementById('a-cash').className='seg-btn'};
+document.getElementById('a-cash').onclick=()=>{aMethod='cash';document.getElementById('a-cash').className='seg-btn on-dark';document.getElementById('a-card').className='seg-btn'};
+
+document.getElementById('a-save').onclick=async()=>{
+  const amt=parseFloat(document.getElementById('a-amount').value);
+  if(!amt||amt<=0){toast('Введи корректную сумму');return}
+  const comment=document.getElementById('a-comment').value.trim()||null;
+  try{
+    await api('/api/transactions',{method:'POST',body:JSON.stringify({type:aType,category:aCat,amount:amt,payment_method:aMethod,comment})});
+    document.getElementById('ov-add').classList.remove('open');
+    clrCache();toast('✓ Сохранено');loadCurrent();
+  }catch{toast('Ошибка при сохранении')}
+};
+
+/* ── EDIT ── */
+function openEdit(d){
+  eId=d.id;eType=d.type;eCat=d.cat;eMethod=d.method;
+  document.getElementById('e-amount').value=d.amount;
+  document.getElementById('e-comment').value=d.comment||'';
+  if(eType==='income'){document.getElementById('e-inc').className='seg-btn on-inc';document.getElementById('e-exp').className='seg-btn'}
+  else{document.getElementById('e-exp').className='seg-btn on-exp';document.getElementById('e-inc').className='seg-btn'}
+  if(eMethod==='card'){document.getElementById('e-card').className='seg-btn on-dark';document.getElementById('e-cash').className='seg-btn'}
+  else{document.getElementById('e-cash').className='seg-btn on-dark';document.getElementById('e-card').className='seg-btn'}
+  buildCats('e-cats',eType,eCat,c=>eCat=c);
+  document.getElementById('ov-edit').classList.add('open');
+}
+document.getElementById('e-cancel').onclick=()=>document.getElementById('ov-edit').classList.remove('open');
+document.getElementById('ov-edit').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open')};
+
+document.getElementById('e-inc').onclick=()=>{eType='income';eCat='Work';document.getElementById('e-inc').className='seg-btn on-inc';document.getElementById('e-exp').className='seg-btn';buildCats('e-cats',eType,eCat,c=>eCat=c)};
+document.getElementById('e-exp').onclick=()=>{eType='expense';eCat='Fixed';document.getElementById('e-exp').className='seg-btn on-exp';document.getElementById('e-inc').className='seg-btn';buildCats('e-cats',eType,eCat,c=>eCat=c)};
+document.getElementById('e-card').onclick=()=>{eMethod='card';document.getElementById('e-card').className='seg-btn on-dark';document.getElementById('e-cash').className='seg-btn'};
+document.getElementById('e-cash').onclick=()=>{eMethod='cash';document.getElementById('e-cash').className='seg-btn on-dark';document.getElementById('e-card').className='seg-btn'};
+
+document.getElementById('e-save').onclick=async()=>{
+  const amt=parseFloat(document.getElementById('e-amount').value);
+  if(!amt||amt<=0){toast('Введи корректную сумму');return}
+  const comment=document.getElementById('e-comment').value.trim()||null;
+  try{
+    await api(`/api/transactions/${eId}`,{method:'PUT',body:JSON.stringify({type:eType,category:eCat,amount:amt,payment_method:eMethod,comment})});
+    document.getElementById('ov-edit').classList.remove('open');
+    clrCache();toast('✓ Изменено');loadCurrent();
+  }catch{toast('Ошибка')}
+};
+document.getElementById('e-del').onclick=async()=>{
+  try{
+    await api(`/api/transactions/${eId}`,{method:'DELETE'});
+    document.getElementById('ov-edit').classList.remove('open');
+    clrCache();toast('Удалено');loadCurrent();
+  }catch{toast('Ошибка')}
+};
+
+/* ── TABS & MONTH ── */
+function loadCurrent(){
+  const t=document.querySelector('.tab.active').dataset.tab;
+  if(t==='overview')loadOverview();
+  else if(t==='breakdown')loadBreakdown();
+  else if(t==='history')loadHistory();
+  else if(t==='compare')loadCompare();
 }
 
-function closeAddModal() { document.getElementById('modal-add').classList.remove('open'); }
-
-document.getElementById('fab').addEventListener('click', openAddModal);
-document.getElementById('btn-cancel-add').addEventListener('click', closeAddModal);
-document.getElementById('modal-add').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeAddModal();
-});
-
-document.getElementById('type-income').addEventListener('click', () => {
-  addType = 'income';
-  document.getElementById('type-income').className = 'seg-btn active-income';
-  document.getElementById('type-expense').className = 'seg-btn';
-  addCat = 'Work';
-  buildCatGrid('cat-grid', addType, addCat, cat => { addCat = cat; });
-});
-document.getElementById('type-expense').addEventListener('click', () => {
-  addType = 'expense';
-  document.getElementById('type-expense').className = 'seg-btn active-expense';
-  document.getElementById('type-income').className = 'seg-btn';
-  addCat = 'Fixed';
-  buildCatGrid('cat-grid', addType, addCat, cat => { addCat = cat; });
-});
-document.getElementById('method-card').addEventListener('click', () => {
-  addMethod = 'card';
-  document.getElementById('method-card').className = 'seg-btn active-card';
-  document.getElementById('method-cash').className = 'seg-btn';
-});
-document.getElementById('method-cash').addEventListener('click', () => {
-  addMethod = 'cash';
-  document.getElementById('method-cash').className = 'seg-btn active-cash';
-  document.getElementById('method-card').className = 'seg-btn';
-});
-
-document.getElementById('btn-save').addEventListener('click', async () => {
-  const amount = parseFloat(document.getElementById('add-amount').value);
-  if (!amount || amount <= 0) { showToast('Введи корректную сумму'); return; }
-  const comment = document.getElementById('add-comment').value.trim() || null;
-  try {
-    await apiFetch('/api/transactions', {
-      method: 'POST',
-      body: JSON.stringify({type: addType, category: addCat, amount, payment_method: addMethod, comment})
-    });
-    closeAddModal();
-    clearCache();
-    showToast('✓ Сохранено');
-    loadCurrentTab();
-  } catch(e) { showToast('Ошибка при сохранении'); }
-});
-
-/* ---- EDIT MODAL ---- */
-function openEditModal(data) {
-  editId = data.id;
-  editType = data.type;
-  editCat = data.cat;
-  editMethod = data.method;
-
-  document.getElementById('edit-amount').value = data.amount;
-  document.getElementById('edit-comment').value = data.comment || '';
-
-  if (editType === 'income') {
-    document.getElementById('edit-type-income').className = 'seg-btn active-income';
-    document.getElementById('edit-type-expense').className = 'seg-btn';
-  } else {
-    document.getElementById('edit-type-expense').className = 'seg-btn active-expense';
-    document.getElementById('edit-type-income').className = 'seg-btn';
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(`page-${t.dataset.tab}`).classList.add('active');
+    loadCurrent();
   }
-  if (editMethod === 'card') {
-    document.getElementById('edit-method-card').className = 'seg-btn active-card';
-    document.getElementById('edit-method-cash').className = 'seg-btn';
-  } else {
-    document.getElementById('edit-method-cash').className = 'seg-btn active-cash';
-    document.getElementById('edit-method-card').className = 'seg-btn';
-  }
-  buildCatGrid('edit-cat-grid', editType, editCat, cat => { editCat = cat; });
-  document.getElementById('modal-edit').classList.add('open');
-}
-
-function closeEditModal() { document.getElementById('modal-edit').classList.remove('open'); }
-
-document.getElementById('btn-cancel-edit').addEventListener('click', closeEditModal);
-document.getElementById('modal-edit').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeEditModal();
 });
 
-document.getElementById('edit-type-income').addEventListener('click', () => {
-  editType = 'income';
-  document.getElementById('edit-type-income').className = 'seg-btn active-income';
-  document.getElementById('edit-type-expense').className = 'seg-btn';
-  editCat = 'Work';
-  buildCatGrid('edit-cat-grid', editType, editCat, cat => { editCat = cat; });
-});
-document.getElementById('edit-type-expense').addEventListener('click', () => {
-  editType = 'expense';
-  document.getElementById('edit-type-expense').className = 'seg-btn active-expense';
-  document.getElementById('edit-type-income').className = 'seg-btn';
-  editCat = 'Fixed';
-  buildCatGrid('edit-cat-grid', editType, editCat, cat => { editCat = cat; });
-});
-document.getElementById('edit-method-card').addEventListener('click', () => {
-  editMethod = 'card';
-  document.getElementById('edit-method-card').className = 'seg-btn active-card';
-  document.getElementById('edit-method-cash').className = 'seg-btn';
-});
-document.getElementById('edit-method-cash').addEventListener('click', () => {
-  editMethod = 'cash';
-  document.getElementById('edit-method-cash').className = 'seg-btn active-cash';
-  document.getElementById('edit-method-card').className = 'seg-btn';
-});
+document.getElementById('prev-m').onclick=()=>{M--;if(M<1){M=12;Y--}clrCache();updMonth();loadCurrent()};
+document.getElementById('next-m').onclick=()=>{const n=new Date();if(Y===n.getFullYear()&&M===n.getMonth()+1)return;M++;if(M>12){M=1;Y++}clrCache();updMonth();loadCurrent()};
 
-document.getElementById('btn-update').addEventListener('click', async () => {
-  const amount = parseFloat(document.getElementById('edit-amount').value);
-  if (!amount || amount <= 0) { showToast('Введи корректную сумму'); return; }
-  const comment = document.getElementById('edit-comment').value.trim() || null;
-  try {
-    await apiFetch(`/api/transactions/${editId}`, {
-      method: 'PUT',
-      body: JSON.stringify({type: editType, category: editCat, amount, payment_method: editMethod, comment})
-    });
-    closeEditModal();
-    clearCache();
-    showToast('✓ Изменено');
-    loadCurrentTab();
-  } catch(e) { showToast('Ошибка при сохранении'); }
-});
-
-document.getElementById('btn-delete').addEventListener('click', async () => {
-  try {
-    await apiFetch(`/api/transactions/${editId}`, {method: 'DELETE'});
-    closeEditModal();
-    clearCache();
-    showToast('Удалено');
-    loadCurrentTab();
-  } catch(e) { showToast('Ошибка при удалении'); }
-});
-
-/* ---- TABS + MONTH ---- */
-function loadCurrentTab() {
-  const active = document.querySelector('.tab.active').dataset.tab;
-  if (active === 'overview') loadOverview();
-  else if (active === 'breakdown') loadBreakdown();
-  else if (active === 'history') loadHistory();
-  else if (active === 'compare') loadCompare();
-}
-
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(`page-${tab.dataset.tab}`).classList.add('active');
-    loadCurrentTab();
-  });
-});
-
-document.getElementById('prev-month').addEventListener('click', () => {
-  curMonth--; if (curMonth < 1) { curMonth = 12; curYear--; }
-  clearCache(); updateMonthLabel(); loadCurrentTab();
-});
-document.getElementById('next-month').addEventListener('click', () => {
-  const now = new Date();
-  if (curYear === now.getFullYear() && curMonth === now.getMonth()+1) return;
-  curMonth++; if (curMonth > 12) { curMonth = 1; curYear++; }
-  clearCache(); updateMonthLabel(); loadCurrentTab();
-});
-
-updateMonthLabel();
-loadOverview();
+updMonth();loadOverview();
 </script>
 </body>
 </html>
