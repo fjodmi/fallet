@@ -170,5 +170,9 @@ def delete_transaction(tx_id):
 def miniapp():
     return send_file("miniapp.html")
 
+@app.route("/FALLET-wordmark-light.png")
+def logo():
+    return send_file("FALLET-wordmark-light.png")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
