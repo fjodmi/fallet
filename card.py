@@ -45,16 +45,16 @@ def draw_logo(draw, f_logo, f_label, INNER_PAD, right_text, img=None):
     draw.text((1080 - INNER_PAD - right_w, 83), right_text, font=f_label, fill=TEXT_MUTED)
 
 
-def generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name):
+def generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name, balance_card_all=None, balance_cash_all=None):
     W, H = 1080, 920
     img = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
 
     total_income = income_card + income_cash
     total_expense = expense_card + expense_cash
-    balance = total_income - total_expense
-    balance_card = income_card - expense_card
-    balance_cash = income_cash - expense_cash
+    balance_card = balance_card_all if balance_card_all is not None else (income_card - expense_card)
+    balance_cash = balance_cash_all if balance_cash_all is not None else (income_cash - expense_cash)
+    balance = balance_card + balance_cash
 
     f_logo = lf(GROTESK_BOLD, 52)
     f_balance = lf(GROTESK_BOLD, 96)

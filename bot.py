@@ -56,6 +56,14 @@ def add_transaction(type_, category, amount, payment_method, comment=None):
     conn.commit()
     conn.close()
 
+def get_all_transactions():
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM transactions ORDER BY created_at DESC")
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
 def get_month_transactions(year=None, month=None):
     now = datetime.now()
     year = year or now.year
@@ -318,14 +326,22 @@ async def save_transaction(message, state, comment, from_callback=False):
 async def show_balance(source):
     from card import generate_balance_card
     from aiogram.types import BufferedInputFile
+    # Current month income/expenses
     rows = get_month_transactions()
     income_card = sum(r[3] for r in rows if r[1] == "income" and r[4] == "card")
     income_cash = sum(r[3] for r in rows if r[1] == "income" and r[4] == "cash")
     expense_card = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "card")
     expense_cash = sum(r[3] for r in rows if r[1] == "expense" and r[4] == "cash")
+    # All-time balance
+    all_rows = get_all_transactions()
+    total_income_all = sum(r[3] for r in all_rows if r[1] == "income")
+    total_expense_all = sum(r[3] for r in all_rows if r[1] == "expense")
+    balance_card_all = sum(r[3] for r in all_rows if r[1] == "income" and r[4] == "card") - sum(r[3] for r in all_rows if r[1] == "expense" and r[4] == "card")
+    balance_cash_all = sum(r[3] for r in all_rows if r[1] == "income" and r[4] == "cash") - sum(r[3] for r in all_rows if r[1] == "expense" and r[4] == "cash")
     now = datetime.now()
     month_name = now.strftime("%B %Y")
-    buf = generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name)
+    buf = generate_balance_card(income_card, income_cash, expense_card, expense_cash, month_name,
+                                 balance_card_all, balance_cash_all)
     photo = BufferedInputFile(buf.read(), filename="balance.png")
     msg = source if isinstance(source, Message) else source.message
     await msg.answer_photo(photo, reply_markup=back_button())
