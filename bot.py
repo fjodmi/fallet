@@ -617,17 +617,10 @@ async def cb_plan(callback: CallbackQuery):
         text = "📋 <b>Запланированные расходы</b>\n\nСписок пуст. Нажми ➕ чтобы добавить."
     else:
         total = sum(p[2] for p in planned)
-        rows = get_month_transactions()
-        month_income = sum(r[3] for r in rows if r[1] == "income")
-        month_expense = sum(r[3] for r in rows if r[1] == "expense")
-        month_balance = month_income - month_expense
-        free = month_balance - total
         text = "📋 <b>Запланированные расходы:</b>\n\n"
         for p in planned:
             text += "• " + p[1] + ": -" + str(int(p[2])) + " €\n"
-        text += "\n<b>Итого запланировано: -" + str(int(total)) + " €</b>\n"
-        text += "Остаток месяца: " + ("+" if month_balance >= 0 else "") + str(int(month_balance)) + " €\n"
-        text += "💚 Свободно: <b>" + ("+" if free >= 0 else "") + str(int(free)) + " €</b>"
+        text += "\n<b>Итого: -" + str(int(total)) + " €</b>"
 
     buttons = [[InlineKeyboardButton(text="➕ Добавить", callback_data="plan_add")]]
     if planned:
