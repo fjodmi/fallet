@@ -30,20 +30,41 @@ def summary():
     month = request.args.get("month", datetime.now().month)
     prefix = f"{year}-{int(month):02d}"
     conn = get_db()
+
+    # Current month income/expenses
     rows = conn.execute(
         "SELECT * FROM transactions WHERE created_at LIKE ? ORDER BY created_at DESC",
         (f"{prefix}%",)
     ).fetchall()
+
+    # All-time transactions for balance
+    all_rows = conn.execute(
+        "SELECT * FROM transactions ORDER BY created_at DESC"
+    ).fetchall()
     conn.close()
+
     income_card = sum(r["amount"] for r in rows if r["type"] == "income" and r["payment_method"] == "card")
     income_cash = sum(r["amount"] for r in rows if r["type"] == "income" and r["payment_method"] == "cash")
     expense_card = sum(r["amount"] for r in rows if r["type"] == "expense" and r["payment_method"] == "card")
     expense_cash = sum(r["amount"] for r in rows if r["type"] == "expense" and r["payment_method"] == "cash")
+
+    # All-time balance
+    all_income_card = sum(r["amount"] for r in all_rows if r["type"] == "income" and r["payment_method"] == "card")
+    all_income_cash = sum(r["amount"] for r in all_rows if r["type"] == "income" and r["payment_method"] == "cash")
+    all_expense_card = sum(r["amount"] for r in all_rows if r["type"] == "expense" and r["payment_method"] == "card")
+    all_expense_cash = sum(r["amount"] for r in all_rows if r["type"] == "expense" and r["payment_method"] == "cash")
+
+    balance_card = all_income_card - all_expense_card
+    balance_cash = all_income_cash - all_expense_cash
+    balance_total = balance_card + balance_cash
+
     return jsonify({
         "month": f"{year}-{int(month):02d}",
         "income": {"card": income_card, "cash": income_cash, "total": income_card + income_cash},
         "expense": {"card": expense_card, "cash": expense_cash, "total": expense_card + expense_cash},
-        "balance": (income_card + income_cash) - (expense_card + expense_cash)
+        "balance": balance_total,
+        "balance_card": balance_card,
+        "balance_cash": balance_cash,
     })
 
 @app.route("/api/transactions")
