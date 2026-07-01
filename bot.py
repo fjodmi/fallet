@@ -105,6 +105,38 @@ def update_transaction(id_, **kwargs):
     conn.commit()
     conn.close()
 
+def init_plan_table():
+    conn = sqlite3.connect("/data/budget.db")
+    conn.execute("""CREATE TABLE IF NOT EXISTS planned_expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        created_at TEXT NOT NULL
+    )""")
+    conn.commit()
+    conn.close()
+
+def get_planned():
+    conn = sqlite3.connect("/data/budget.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM planned_expenses ORDER BY name")
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+def add_planned(name, amount):
+    conn = sqlite3.connect("/data/budget.db")
+    conn.execute("INSERT INTO planned_expenses (name, amount, created_at) VALUES (?, ?, ?)",
+                 (name, amount, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+def delete_planned(plan_id):
+    conn = sqlite3.connect("/data/budget.db")
+    conn.execute("DELETE FROM planned_expenses WHERE id=?", (plan_id,))
+    conn.commit()
+    conn.close()
+
 def save_message_id(message_id):
     conn = sqlite3.connect("/data/budget.db")
     c = conn.cursor()
@@ -124,10 +156,18 @@ class AddTransaction(StatesGroup):
     waiting_amount = State()
     waiting_comment = State()
 
+class AddPlan(StatesGroup):
+    waiting_name = State()
+    waiting_amount = State()
+
 class EditTransaction(StatesGroup):
     choosing_field = State()
     waiting_new_amount = State()
     waiting_new_comment = State()
+
+class AddPlan(StatesGroup):
+    waiting_name = State()
+    waiting_amount = State()
 
 def main_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -139,6 +179,7 @@ def main_menu():
          InlineKeyboardButton(text="🔄 Сравнение", callback_data="compare")],
         [InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last"),
          InlineKeyboardButton(text="✏️ Редактировать", callback_data="edit_last")],
+        [InlineKeyboardButton(text="📋 План расходов", callback_data="show_plan")],
         [InlineKeyboardButton(text="🧹 Очистить чат", callback_data="clear_chat")],
     ])
 
@@ -568,6 +609,82 @@ async def process_edit_comment(message: Message, state: FSMContext):
     sent = await message.answer(f"✅ Комментарий {comment_text}\n\nГлавное меню:", reply_markup=main_menu())
     save_message_id(sent.message_id)
 
+# --- Plan handlers ---
+@dp.callback_query(F.data == "plan")
+async def cb_plan(callback: CallbackQuery):
+    planned = get_planned()
+    if not planned:
+        text = "📋 <b>Запланированные расходы</b>\n\nСписок пуст. Нажми ➕ чтобы добавить."
+    else:
+        total = sum(p[2] for p in planned)
+        rows = get_month_transactions()
+        month_income = sum(r[3] for r in rows if r[1] == "income")
+        month_expense = sum(r[3] for r in rows if r[1] == "expense")
+        month_balance = month_income - month_expense
+        free = month_balance - total
+        text = "📋 <b>Запланированные расходы:</b>\n\n"
+        for p in planned:
+            text += "• " + p[1] + ": -" + str(int(p[2])) + " €\n"
+        text += "\n<b>Итого запланировано: -" + str(int(total)) + " €</b>\n"
+        text += "Остаток месяца: " + ("+" if month_balance >= 0 else "") + str(int(month_balance)) + " €\n"
+        text += "💚 Свободно: <b>" + ("+" if free >= 0 else "") + str(int(free)) + " €</b>"
+
+    buttons = [[InlineKeyboardButton(text="➕ Добавить", callback_data="plan_add")]]
+    if planned:
+        buttons.append([InlineKeyboardButton(text="🗑 Удалить", callback_data="plan_delete")])
+    buttons.append([InlineKeyboardButton(text="◀️ В меню", callback_data="back")])
+    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await callback.message.edit_text(text, reply_markup=kb, parse_mode="HTML")
+
+@dp.callback_query(F.data == "plan_add")
+async def cb_plan_add(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(AddPlan.waiting_name)
+    await callback.message.edit_text("Введи название расхода (например: Лизинг):",
+                                      reply_markup=back_button())
+
+@dp.message(AddPlan.waiting_name)
+async def process_plan_name(message: Message, state: FSMContext):
+    await state.update_data(plan_name=message.text.strip())
+    await state.set_state(AddPlan.waiting_amount)
+    sent = await message.answer("Введи сумму в €:", reply_markup=back_button())
+    save_message_id(sent.message_id)
+    save_message_id(message.message_id)
+
+@dp.message(AddPlan.waiting_amount)
+async def process_plan_amount(message: Message, state: FSMContext):
+    try:
+        amount = float(message.text.replace(",", "."))
+        if amount <= 0:
+            raise ValueError
+    except ValueError:
+        await message.answer("❌ Введи корректную сумму")
+        return
+    data = await state.get_data()
+    add_planned(data["plan_name"], amount)
+    await state.clear()
+    try:
+        await message.delete()
+    except:
+        pass
+    sent = await message.answer("✅ Добавлено: " + data["plan_name"] + " -" + str(int(amount)) + " €\n\nГлавное меню:", reply_markup=main_menu())
+    save_message_id(sent.message_id)
+
+@dp.callback_query(F.data == "plan_delete")
+async def cb_plan_delete(callback: CallbackQuery):
+    planned = get_planned()
+    buttons = [[InlineKeyboardButton(text=p[1] + " (-" + str(int(p[2])) + "€)", callback_data="plan_del:" + str(p[0]))] for p in planned]
+    buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="plan")])
+    await callback.message.edit_text("Что удалить?", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@dp.callback_query(F.data.startswith("plan_del:"))
+async def cb_plan_del_confirm(callback: CallbackQuery):
+    plan_id = int(callback.data.split(":")[1])
+    delete_planned(plan_id)
+    await callback.answer("Удалено")
+    # Refresh plan view
+    callback.data = "plan"
+    await cb_plan(callback)
+
 # --- AI free text handler ---
 async def parse_transaction_with_ai(text: str) -> dict | None:
     import json
@@ -667,6 +784,7 @@ async def handle_free_text(message: Message, state: FSMContext):
 
 async def main():
     init_db()
+    init_plan_table()
     await set_commands()
     scheduler.add_job(send_reminder, "cron", hour=22, minute=0)
     scheduler.start()
