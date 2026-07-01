@@ -179,7 +179,7 @@ def main_menu():
          InlineKeyboardButton(text="🔄 Сравнение", callback_data="compare")],
         [InlineKeyboardButton(text="🗑 Удалить последнее", callback_data="delete_last"),
          InlineKeyboardButton(text="✏️ Редактировать", callback_data="edit_last")],
-        [InlineKeyboardButton(text="📋 План расходов", callback_data="show_plan")],
+        [InlineKeyboardButton(text="📋 План расходов", callback_data="plan")],
         [InlineKeyboardButton(text="🧹 Очистить чат", callback_data="clear_chat")],
     ])
 
